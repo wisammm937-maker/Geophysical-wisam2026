@@ -1,0 +1,4476 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+<title>SAS 300 | مقياس المقاومية الكهربائية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+/* ══════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════ */
+:root{
+  /* Blues */
+  --n0:#05122e;   /* deepest navy */
+  --n1:#0b1f50;   /* header navy  */
+  --n2:#1148a8;   /* primary blue */
+  --n3:#1e60cc;   /* mid blue     */
+  --n4:#3a82e8;   /* sky blue     */
+  --n5:#6baaf0;   /* light blue   */
+  --n6:#c2d9f8;   /* pale blue    */
+  --n7:#e8f2fd;   /* frost        */
+  --n8:#f3f8ff;   /* snow         */
+  /* Accents */
+  --cyan:#00bcd4;
+  --cyan2:#00e5ff;
+  --green:#00b894;
+  --red:#e03131;
+  --amber:#f59f00;
+  --purple:#7b40c2;
+  /* Text */
+  --tx1:#081840;
+  --tx2:#1e3d78;
+  --tx3:#5a7ab0;
+  /* Utility */
+  --bdr:rgba(17,72,168,.12);
+  --bdr2:rgba(17,72,168,.24);
+  --sh:0 2px 14px rgba(8,24,64,.08);
+  --sh2:0 8px 32px rgba(8,24,64,.15);
+  --sh3:0 16px 48px rgba(8,24,64,.22);
+  --r:20px; --r2:14px; --r3:10px;
+}
+
+/* ══ RESET ══ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:'Tajawal',sans-serif;background:var(--n8);color:var(--tx1);overflow:hidden;}
+
+/* ══ SCROLLBAR ══ */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--n7);}
+::-webkit-scrollbar-thumb{background:var(--n6);border-radius:4px;}
+
+/* ══════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════ */
+.hdr{
+  background:var(--n1);
+  padding-top:env(safe-area-inset-top,0);
+  position:relative;z-index:50;
+  box-shadow:0 3px 24px rgba(0,0,0,.38);
+}
+
+/* Top row */
+.hdr-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 12px 6px;
+}
+.brand{display:flex;align-items:center;gap:9px;}
+.brand-ico{
+  width:36px;height:36px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--n3),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 4px 16px rgba(0,188,212,.38);
+  position:relative;
+}
+.brand-ico::after{
+  content:'';position:absolute;inset:0;border-radius:11px;
+  border:1px solid rgba(255,255,255,.25);
+}
+.brand-name{color:#fff;font-size:.88rem;font-weight:900;line-height:1.2;white-space:nowrap;}
+.brand-sub{color:rgba(255,255,255,.38);font-size:.52rem;font-weight:400;letter-spacing:.04em;white-space:nowrap;}
+.hdr-right{display:flex;align-items:center;gap:6px;}
+.badge{
+  border-radius:20px;padding:4px 9px;font-size:.55rem;font-weight:800;
+  white-space:nowrap;line-height:1.3;text-align:center;
+}
+.badge-cyan{background:rgba(0,188,212,.15);border:1px solid rgba(0,188,212,.3);color:var(--cyan);}
+.badge-white{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.75);}
+
+/* Geophysicist banner */
+.geo-banner{
+  background:linear-gradient(90deg,rgba(0,188,212,.1),rgba(0,188,212,.05),rgba(0,188,212,.1));
+  border-top:1px solid rgba(0,188,212,.15);
+  padding:3px 12px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.geo-banner .geo-name{font-size:.64rem;font-weight:900;color:var(--cyan);letter-spacing:.02em;white-space:nowrap;}
+.geo-banner .geo-sep{width:1px;height:11px;background:rgba(0,188,212,.3);}
+.geo-banner .geo-inst{font-size:.54rem;font-weight:500;color:rgba(255,255,255,.32);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ══════════════════════════════════════════
+   MAIN SCROLL
+══════════════════════════════════════════ */
+.main-scroll{
+  overflow-y:auto;
+  padding-bottom:16px;
+  /* height set by JS after render */
+}
+
+/* ══════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════ */
+.card{
+  background:#fff;
+  margin:14px 14px 0;
+  border-radius:var(--r);
+  border:1px solid var(--bdr);
+  box-shadow:var(--sh);
+  overflow:hidden;
+}
+.card-hd{
+  padding:11px 15px;
+  display:flex;align-items:center;gap:9px;
+  border-bottom:1px solid var(--bdr);
+  background:linear-gradient(110deg,var(--n7) 0%,#fff 65%);
+}
+.card-hd .chi{
+  width:30px;height:30px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--n2),var(--n4));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#fff;
+  box-shadow:0 3px 10px rgba(17,72,168,.26);
+}
+.card-hd h3{font-size:.77rem;font-weight:800;color:var(--tx2);}
+.card-bd{padding:15px;}
+
+/* ══════════════════════════════════════════
+   FORM
+══════════════════════════════════════════ */
+.fld{margin-bottom:12px;}
+.flb{
+  font-size:.67rem;font-weight:700;color:var(--tx2);
+  margin-bottom:5px;display:flex;align-items:center;gap:5px;
+}
+.flb::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--n3);flex-shrink:0;}
+
+input[type=text],input[type=number],select{
+  width:100%;height:44px;padding:0 14px;
+  border:1.5px solid var(--n6);border-radius:var(--r2);
+  background:var(--n7);
+  font-family:'Tajawal';font-size:.82rem;font-weight:600;color:var(--tx1);
+  transition:border .18s,background .18s,box-shadow .18s;
+  -webkit-appearance:none;appearance:none;
+}
+input:focus,select:focus{
+  outline:none;border-color:var(--n3);background:#fff;
+  box-shadow:0 0 0 3.5px rgba(30,96,204,.12);
+}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ══════════════════════════════════════════
+   INFO CHIPS
+══════════════════════════════════════════ */
+.ic2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+.ic{
+  border-radius:var(--r2);padding:12px 13px;
+  background:var(--n8);border:1px solid var(--bdr);
+  position:relative;overflow:hidden;
+}
+.ic::before{
+  content:'';position:absolute;top:0;inset-inline:0;height:3px;
+  background:linear-gradient(90deg,var(--n2),var(--n4));
+}
+.ic.c::before{background:linear-gradient(90deg,var(--cyan),#007c8c);}
+.ic .il{font-size:.59rem;font-weight:700;color:var(--tx3);margin-bottom:4px;}
+.ic .iv{font-size:1.08rem;font-weight:900;color:var(--n2);line-height:1.2;}
+.ic.c .iv{color:var(--cyan);}
+.ic.full{grid-column:1/-1;}
+
+/* DEPTH PILL */
+.dpill{
+  background:linear-gradient(90deg,#e6f7ee,#f0fbf3);
+  border:1px solid #b2dfc0;border-radius:var(--r3);
+  padding:9px 13px;margin-bottom:12px;
+  font-size:.74rem;font-weight:800;color:#14582a;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+
+/* INTERPRET */
+.ibox{
+  background:linear-gradient(135deg,var(--n7),#fff);
+  border-inline-end:3px solid var(--n3);
+  border-radius:var(--r2);padding:11px 13px;
+  font-size:.74rem;color:var(--tx2);line-height:1.7;
+  margin-bottom:12px;min-height:42px;
+}
+
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
+.btn{
+  width:100%;height:48px;border:none;border-radius:var(--r2);
+  font-family:'Tajawal';font-size:.83rem;font-weight:800;
+  cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  letter-spacing:.01em;
+}
+.btn:active{transform:scale(.97);}
+
+.btn-p{
+  background:linear-gradient(135deg,var(--n2) 0%,var(--n3) 55%,var(--n4) 100%);
+  color:#fff;box-shadow:0 4px 18px rgba(17,72,168,.32);
+}
+.btn-p:hover{box-shadow:0 6px 24px rgba(17,72,168,.45);}
+.btn-g{background:linear-gradient(135deg,#00634f,var(--green));color:#fff;margin-top:8px;box-shadow:0 4px 14px rgba(0,184,148,.28);}
+.btn-r{background:linear-gradient(135deg,#8c1a1a,var(--red));color:#fff;margin-top:8px;box-shadow:0 4px 14px rgba(224,49,49,.28);}
+.btn-pdf{background:linear-gradient(135deg,#991b1b,#c62828);color:#fff;margin-top:8px;}
+.btn-ghost{
+  background:transparent;border:1.5px solid var(--bdr2);
+  color:var(--tx2);margin-top:6px;font-size:.78rem;
+}
+.btn-ghost:hover{background:var(--n7);}
+.btn-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.btn-pair .btn{margin-top:0;}
+
+/* ══════════════════════════════════════════
+   BOTTOM NAV
+══════════════════════════════════════════ */
+.btm-wrap{
+  position:fixed;bottom:0;left:0;right:0;z-index:60;
+  padding-bottom:env(safe-area-inset-bottom,0);
+  background:var(--n1);
+  box-shadow:0 -4px 24px rgba(8,24,64,.3);
+}
+/* Geophysicist footer bar */
+.btm-geo{
+  background:linear-gradient(90deg,rgba(0,188,212,.07),rgba(0,188,212,.03),rgba(0,188,212,.07));
+  border-top:1px solid rgba(0,188,212,.12);
+  padding:2px 12px;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.btm-geo span{font-size:.55rem;}
+.btm-geo .gn{font-size:.58rem;font-weight:900;color:var(--cyan);}
+.btm-geo .gd{font-size:.5rem;color:rgba(255,255,255,.28);}
+
+.btm-nav{display:flex;border-top:1px solid rgba(255,255,255,.07);}
+.btm-btn{
+  flex:1;padding:10px 4px 9px;text-align:center;cursor:pointer;
+  transition:all .2s;border-top:2.5px solid transparent;
+}
+.btm-btn .bi{font-size:19px;display:block;margin-bottom:2px;transition:filter .2s;}
+.btm-btn .bl{font-size:.58rem;font-weight:700;color:rgba(255,255,255,.35);transition:color .2s;}
+.btm-btn.open{border-top-color:var(--cyan);}
+.btm-btn.open .bi{filter:drop-shadow(0 0 7px var(--cyan));}
+.btm-btn.open .bl{color:var(--cyan);}
+
+/* ══════════════════════════════════════════
+   SHEET (bottom drawer)
+══════════════════════════════════════════ */
+.sheet-overlay{
+  position:fixed;inset:0;background:rgba(8,24,64,.48);
+  z-index:100;opacity:0;pointer-events:none;transition:opacity .3s;
+  backdrop-filter:blur(3px);
+}
+.sheet-overlay.show{opacity:1;pointer-events:all;}
+
+.sheet{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#fff;
+  border-radius:26px 26px 0 0;
+  z-index:110;max-height:92vh;
+  display:flex;flex-direction:column;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.32,.72,0,1);
+  box-shadow:0 -10px 48px rgba(8,24,64,.24);
+}
+.sheet.show{transform:translateY(0);}
+
+.sheet-pill{
+  width:44px;height:4px;border-radius:2px;
+  background:var(--n6);margin:12px auto 0;flex-shrink:0;
+}
+.sheet-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px 11px;border-bottom:1px solid var(--bdr);flex-shrink:0;
+  background:linear-gradient(90deg,var(--n7),#fff 60%);
+}
+.sheet-hd h2{font-size:.88rem;font-weight:900;color:var(--n1);display:flex;align-items:center;gap:7px;}
+.sheet-hd h2 .sh-ico{
+  width:26px;height:26px;border-radius:8px;
+  background:linear-gradient(135deg,var(--n2),var(--n4));
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;
+}
+.sheet-close{
+  width:30px;height:30px;border-radius:9px;
+  background:var(--n7);border:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;cursor:pointer;color:var(--tx2);font-weight:900;
+  transition:background .15s;
+}
+.sheet-close:hover{background:var(--n6);}
+.sheet-body{overflow-y:auto;flex:1;padding:0 0 env(safe-area-inset-bottom,12px);}
+
+/* ══════════════════════════════════════════
+   CURVE TOGGLES
+══════════════════════════════════════════ */
+.curve-toggles{
+  display:flex;flex-wrap:wrap;gap:7px;
+  padding:12px 14px 11px;border-bottom:1px solid var(--bdr);
+}
+.c-tog{
+  padding:5px 12px;border-radius:20px;font-size:.62rem;font-weight:800;
+  border:1.5px solid var(--bdr2);color:var(--tx2);cursor:pointer;
+  transition:all .18s;background:var(--n7);
+}
+.c-tog.on{color:#fff;border-color:transparent;}
+.c-tog[data-c="field"].on{background:var(--n3);}
+.c-tog[data-c="dry"].on{background:var(--amber);}
+.c-tog[data-c="water"].on{background:#0277bd;}
+.c-tog[data-c="two"].on{background:#00838f;}
+.c-tog[data-c="three"].on{background:var(--purple);}
+
+/* CHART */
+.chart-box{padding:12px 14px;background:#fff;}
+canvas#rhoChart{width:100%!important;max-height:300px;}
+
+/* ══════════════════════════════════════════
+   VERTICAL GEO-ELECTRIC SECTION (7-color)
+══════════════════════════════════════════ */
+.vgeo-section{
+  margin:14px 14px 0;background:#fff;border-radius:var(--r);
+  border:1px solid var(--bdr);box-shadow:var(--sh);overflow:hidden;
+}
+.vgeo-hd{
+  background:linear-gradient(90deg,#0b1f50,#1148a8);
+  color:#fff;padding:10px 15px;font-size:.72rem;font-weight:800;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.vgeo-mode-tog{display:flex;background:rgba(255,255,255,.12);border-radius:20px;padding:2px;flex-shrink:0;}
+.vgeo-mode-btn{padding:4px 10px;border-radius:18px;font-size:.58rem;font-weight:800;cursor:pointer;color:rgba(255,255,255,.7);white-space:nowrap;}
+.vgeo-mode-btn.on{background:#00bcd4;color:#05122e;}
+.vgeo-tools-row{
+  display:flex;gap:7px;padding:9px 14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--bdr);background:var(--n8);
+}
+.vgeo-tools-row .vtbtn{
+  flex:1;min-width:100px;padding:8px 10px;border-radius:var(--r2);
+  font-size:.62rem;font-weight:800;text-align:center;cursor:pointer;
+  border:1.5px solid var(--n6);background:#fff;color:var(--tx2);
+  transition:all .15s;white-space:nowrap;
+}
+.vgeo-tools-row .vtbtn.on{background:linear-gradient(135deg,var(--n2),var(--n4));border-color:var(--n2);color:#fff;box-shadow:0 3px 10px rgba(17,72,168,.28);}
+.vgeo-tools-row .vtbtn.warn{border-color:#ffcdd2;color:#c62828;}
+.vgeo-tools-row .vtbtn.warn:active{background:#ffebee;}
+.vgeo-edit-hint{
+  margin:0 14px 10px;background:#fff8e1;border:1px solid #ffe082;
+  border-radius:var(--r2);padding:8px 12px;font-size:.62rem;color:#7a5c00;
+  line-height:1.6;display:none;
+}
+.vgeo-edit-hint.show{display:block;}
+canvas#vgeoCanvas.edit-mode{cursor:copy;}
+.vgeo-tbl-wrap{margin:0 14px 14px;border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;}
+.vgeo-tbl-hd{background:var(--n7);color:var(--tx2);font-size:.64rem;font-weight:800;padding:7px 12px;border-bottom:1px solid var(--bdr);}
+.vgeo-tbl{width:100%;border-collapse:collapse;font-size:.62rem;}
+.vgeo-tbl thead th{background:#f8fbff;color:var(--tx3);font-weight:800;padding:6px 4px;text-align:center;border-bottom:1px solid var(--bdr);}
+.vgeo-tbl tbody td{padding:6px 4px;text-align:center;color:var(--tx1);font-weight:700;border-bottom:1px solid var(--n7);}
+.vgeo-tbl tbody tr:last-child td{border-bottom:none;}
+.vgeo-tbl .vg-swatch{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.15);vertical-align:middle;margin-left:4px;}
+.vgeo-tbl .vg-interp{font-size:.56rem;font-weight:700;}
+.vgeo-body{padding:14px;display:flex;gap:12px;}
+.vgeo-canvas-wrap{
+  position:relative;flex:1;min-width:0;
+}
+canvas#vgeoCanvas{width:100%!important;display:block;border-radius:8px;cursor:crosshair;}
+.vgeo-depth-ticks{
+  position:absolute;top:0;right:calc(100% + 4px);height:100%;
+  display:flex;flex-direction:column;justify-content:space-between;
+  font-size:.55rem;font-weight:700;color:var(--tx3);text-align:left;padding:2px 0;
+}
+.vgeo-tooltip{
+  position:absolute;pointer-events:none;background:rgba(8,24,64,.9);
+  color:#fff;font-size:.6rem;padding:5px 9px;border-radius:8px;
+  white-space:nowrap;display:none;z-index:8;backdrop-filter:blur(4px);
+  transform:translate(-50%,-115%);
+}
+.vgeo-legend{
+  width:34px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+}
+canvas#vgeoLegend{width:22px!important;border-radius:6px;box-shadow:var(--sh);}
+.vgeo-legend-lbl{font-size:.5rem;font-weight:800;color:var(--tx3);text-align:center;line-height:1.3;margin:3px 0;}
+.vgeo-note{
+  margin:0 14px 14px;background:var(--n7);border:1px solid var(--bdr);
+  border-radius:var(--r2);padding:10px 13px;font-size:.66rem;color:var(--tx2);line-height:1.65;
+}
+.vgeo-scale-row{
+  display:flex;justify-content:space-between;padding:0 14px 12px;font-size:.58rem;color:var(--tx3);font-weight:700;
+}
+
+/* ══════════════════════════════════════════
+   GEO-ELECTRIC SECTION
+══════════════════════════════════════════ */
+.geo-section{
+  margin:14px 14px 0;
+  background:#fff;border-radius:var(--r);
+  border:1px solid var(--bdr);box-shadow:var(--sh);overflow:hidden;
+}
+.geo-hd{
+  background:linear-gradient(90deg,var(--n1),var(--n2));
+  color:#fff;padding:10px 15px;
+  font-size:.72rem;font-weight:800;
+  display:flex;align-items:center;gap:8px;
+}
+.geo-bars{
+  padding:14px 14px 8px;
+  display:flex;justify-content:space-between;align-items:flex-end;gap:6px;
+  min-height:160px;overflow-x:auto;
+}
+.geo-col{flex:1;min-width:52px;text-align:center;}
+.geo-bar{
+  width:100%;border-radius:7px 7px 0 0;
+  transition:height .25s;cursor:pointer;position:relative;
+  border:1px solid rgba(255,255,255,.2);
+}
+.geo-label{font-size:.57rem;font-weight:700;color:var(--tx2);margin-top:6px;}
+.geo-depth{font-size:.53rem;color:var(--tx3);margin-top:2px;}
+.geo-tooltip{
+  position:absolute;top:-26px;left:50%;transform:translateX(-50%);
+  background:rgba(8,24,64,.82);color:#fff;
+  font-size:9px;padding:3px 7px;border-radius:8px;
+  white-space:nowrap;display:none;z-index:5;
+  backdrop-filter:blur(4px);
+}
+.geo-bar:hover .geo-tooltip{display:block;}
+
+/* ══════════════════════════════════════════
+   STATS
+══════════════════════════════════════════ */
+.stats4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 14px;}
+.sb{border-radius:13px;padding:10px 6px;text-align:center;color:#fff;position:relative;overflow:hidden;}
+.sb::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.07);pointer-events:none;}
+.sb.tot{background:linear-gradient(135deg,var(--n1),var(--n2));}
+.sb.mx{background:linear-gradient(135deg,#6b1212,var(--red));}
+.sb.mn{background:linear-gradient(135deg,#005040,var(--green));}
+.sb.av{background:linear-gradient(135deg,#3a0e70,var(--purple));}
+.sb .sl{font-size:.52rem;font-weight:700;opacity:.8;}
+.sb .sv{font-size:.88rem;font-weight:900;margin-top:3px;}
+
+/* CHART NOTE */
+.chart-note{
+  margin:0 14px 14px;background:var(--n7);
+  border:1px solid var(--bdr);border-radius:var(--r2);
+  padding:11px 13px;font-size:.7rem;color:var(--tx2);line-height:1.65;
+}
+
+/* ══════════════════════════════════════════
+   AB CURVE (منحنى AB/2)
+══════════════════════════════════════════ */
+.ab-section{
+  margin:14px 14px 0;background:#fff;border-radius:var(--r);
+  border:1px solid var(--bdr);box-shadow:var(--sh);overflow:hidden;
+}
+.ab-hd{
+  background:linear-gradient(90deg,var(--n1),var(--n2));
+  color:#fff;padding:10px 15px;font-size:.72rem;font-weight:800;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.ab-scale-tog{
+  display:flex;gap:4px;background:rgba(255,255,255,.12);border-radius:16px;padding:2px;
+}
+.ab-scale-btn{
+  padding:4px 10px;border-radius:14px;font-size:.6rem;font-weight:800;
+  color:rgba(255,255,255,.65);cursor:pointer;transition:all .15s;
+}
+.ab-scale-btn.on{background:#fff;color:var(--n2);}
+.ab-import-row{
+  display:flex;gap:8px;padding:11px 14px;border-bottom:1px solid var(--bdr);
+  flex-wrap:wrap;
+}
+.ab-import-row .btn{margin:0;flex:1;min-width:140px;}
+.ab-chart-box{padding:10px 14px 4px;background:#fff;}
+canvas#abChart{width:100%!important;max-height:280px;}
+.ab-import-note{
+  margin:0 14px 12px;background:#fff8e1;border:1px solid #ffe082;
+  border-radius:var(--r2);padding:9px 12px;font-size:.64rem;color:#7a5c00;line-height:1.6;
+}
+.ab-split-row{
+  display:flex;gap:7px;padding:0 14px 10px;flex-wrap:wrap;
+}
+.ab-split-row .vtbtn{
+  flex:1;min-width:100px;padding:8px 10px;border-radius:var(--r2);
+  font-size:.62rem;font-weight:800;text-align:center;cursor:pointer;
+  border:1.5px solid var(--n6);background:#fff;color:var(--tx2);
+  transition:all .15s;white-space:nowrap;
+}
+.ab-split-row .vtbtn.on{background:linear-gradient(135deg,var(--n2),var(--n4));border-color:var(--n2);color:#fff;box-shadow:0 3px 10px rgba(17,72,168,.28);}
+.ab-split-row .vtbtn.warn{border-color:#ffcdd2;color:#c62828;}
+.ab-split-hint{
+  margin:0 14px 10px;background:#e8f5fd;border:1px solid #b3e0f7;
+  border-radius:var(--r2);padding:8px 12px;font-size:.62rem;color:#0d4f6e;
+  line-height:1.6;display:none;
+}
+.ab-split-hint.show{display:block;}
+canvas#abChart.edit-mode{cursor:copy;}
+.meas-import-note{
+  margin:0 0 8px;background:#fff8e1;border:1px solid #ffe082;
+  border-radius:var(--r2);padding:9px 12px;font-size:.64rem;color:#7a5c00;line-height:1.6;
+}
+.ab-seg-tbl-wrap{margin:0 14px 12px;border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;display:none;}
+.ab-seg-tbl-wrap.show{display:block;}
+.ab-seg-tbl-hd{background:var(--n7);color:var(--tx2);font-size:.64rem;font-weight:800;padding:7px 12px;border-bottom:1px solid var(--bdr);}
+.ab-seg-tbl{width:100%;border-collapse:collapse;font-size:.6rem;}
+.ab-seg-tbl thead th{background:#f8fbff;color:var(--tx3);font-weight:800;padding:6px 4px;text-align:center;border-bottom:1px solid var(--bdr);}
+.ab-seg-tbl tbody td{padding:6px 4px;text-align:center;color:var(--tx1);font-weight:700;border-bottom:1px solid var(--n7);}
+.ab-seg-tbl tbody tr:last-child td{border-bottom:none;}
+
+/* ══════════════════════════════════════════
+   AQUIFER BREAK DETECTION (كشف نقاط انخفاض المنحنى)
+══════════════════════════════════════════ */
+.brk-section{margin:14px 14px 0;}
+.brk-card{
+  background:#fff;border-radius:var(--r);border:1px solid var(--bdr);
+  box-shadow:var(--sh);overflow:hidden;
+}
+.brk-hd{
+  background:linear-gradient(90deg,#0277bd,#00838f);
+  color:#fff;padding:10px 15px;font-size:.72rem;font-weight:800;
+  display:flex;align-items:center;gap:8px;
+}
+.brk-body{padding:12px 14px;}
+.brk-empty{font-size:.68rem;color:var(--tx3);text-align:center;padding:10px;}
+.brk-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;
+  background:var(--n8);border:1px solid var(--bdr);margin-bottom:7px;
+}
+.brk-item.strong{background:rgba(2,119,189,.07);border-color:rgba(2,119,189,.28);}
+.brk-dot{
+  width:11px;height:11px;border-radius:50%;flex-shrink:0;
+  background:#0277bd;box-shadow:0 0 0 3px rgba(2,119,189,.18);
+}
+.brk-info{flex:1;min-width:0;}
+.brk-range{font-size:.68rem;font-weight:800;color:var(--tx1);}
+.brk-desc{font-size:.6rem;color:var(--tx3);margin-top:2px;}
+.brk-drop{font-size:.62rem;font-weight:900;color:#0277bd;white-space:nowrap;}
+
+/* ══════════════════════════════════════════
+   DATA TABLE
+══════════════════════════════════════════ */
+.tbl-wrap{overflow-x:auto;padding:8px 14px 12px;}
+table.dtbl{width:100%;min-width:510px;border-collapse:collapse;font-size:.65rem;}
+table.dtbl th{
+  background:linear-gradient(90deg,var(--n7),#fff);
+  color:var(--tx2);padding:9px 6px;font-weight:800;
+  border-bottom:2px solid var(--n6);position:sticky;top:0;
+}
+table.dtbl td{padding:8px 6px;border-bottom:1px solid var(--n7);text-align:center;}
+table.dtbl tr:nth-child(even) td{background:var(--n8);}
+table.dtbl tr:hover td{background:var(--n7);}
+.del-btn{
+  background:var(--red);color:#fff;border:none;border-radius:6px;
+  width:22px;height:22px;font-size:11px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.del-btn:hover{background:#b71c1c;}
+
+/* ══════════════════════════════════════════
+   REF TABLES
+══════════════════════════════════════════ */
+.rtbl-wrap{overflow-x:auto;margin-bottom:14px;}
+table.rtbl{width:100%;min-width:290px;border-collapse:collapse;font-size:.68rem;}
+table.rtbl th{
+  background:linear-gradient(90deg,var(--n2),var(--n4));
+  color:#fff;padding:10px 9px;font-weight:800;
+}
+table.rtbl td{padding:8px 9px;border-bottom:1px solid var(--n7);text-align:center;}
+table.rtbl tr:hover td{background:var(--n8);}
+.chip{display:inline-block;padding:3px 10px;border-radius:8px;font-weight:800;font-size:.63rem;}
+.cv{background:#bbdefb;color:#0d47a1;}
+.cl{background:#c8e6c9;color:#1b5e20;}
+.cm{background:#fff9c4;color:#f57f17;}
+.ch{background:#ffe0b2;color:#e65100;}
+.cv2{background:#ffcdd2;color:#b71c1c;}
+
+/* ══════════════════════════════════════════
+   SCALE
+══════════════════════════════════════════ */
+.scale-blk{margin:0 0 14px;border-radius:var(--r);overflow:hidden;border:1px solid var(--bdr);box-shadow:var(--sh);}
+.scale-ttl{background:linear-gradient(90deg,var(--n1),var(--n2));color:#fff;padding:10px 15px;font-size:.72rem;font-weight:800;}
+.scale-gr{height:22px;background:linear-gradient(90deg,#0d47a1 0%,#1565c0 20%,#388e3c 40%,#fbc02d 60%,#ef6c00 80%,#b71c1c 100%);}
+.scale-lbl{display:flex;justify-content:space-between;padding:5px 10px;background:#fff;}
+.scale-lbl span{font-size:.53rem;font-weight:700;color:var(--tx2);}
+
+/* ══════════════════════════════════════════
+   NOTES
+══════════════════════════════════════════ */
+.notes-area{margin:14px;border-radius:var(--r2);border:1px solid var(--bdr);overflow:hidden;}
+.notes-area textarea{
+  width:100%;padding:13px;border:none;background:var(--n7);
+  font-family:'Tajawal';font-size:.78rem;color:var(--tx1);
+  resize:vertical;min-height:120px;direction:rtl;
+  outline:none;
+}
+.notes-area textarea:focus{background:#fff;}
+
+/* REF bottom credit */
+.ref-credit{
+  margin:16px 0 8px;padding:10px 14px;
+  background:linear-gradient(135deg,var(--n7),#fff);
+  border-radius:var(--r2);border:1px solid var(--bdr);
+  text-align:center;font-size:.7rem;color:var(--tx2);
+}
+.ref-credit strong{color:var(--n2);}
+
+/* ══ GPS BUTTON ══ */
+.gps-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;}
+.gps-row input{flex:1;}
+.btn-gps{
+  height:44px;min-width:80px;border:none;border-radius:var(--r2);
+  background:linear-gradient(135deg,#005040,var(--green));color:#fff;
+  font-family:'Tajawal';font-size:.72rem;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  box-shadow:0 4px 14px rgba(0,184,148,.28);white-space:nowrap;flex-shrink:0;
+  transition:all .18s;
+}
+.btn-gps:active{transform:scale(.97);}
+.btn-gps.loading{opacity:.7;pointer-events:none;}
+
+/* ══ WELLS DB ══ */
+.well-form{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+.well-form .full{grid-column:1/-1;}
+.wells-list{max-height:280px;overflow-y:auto;}
+.well-card{
+  background:var(--n8);border:1px solid var(--bdr);border-radius:var(--r2);
+  padding:11px 13px;margin-bottom:9px;position:relative;
+}
+.well-card::before{
+  content:'';position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--n2),var(--cyan));border-radius:0 0 0 var(--r2);
+}
+.well-card .wn{font-size:.78rem;font-weight:900;color:var(--n1);margin-bottom:5px;}
+.well-card .wg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:4px;}
+.well-card .wgi{font-size:.62rem;color:var(--tx3);}
+.well-card .wgv{font-size:.72rem;font-weight:800;color:var(--tx2);}
+.well-del{
+  position:absolute;top:9px;inset-inline-end:9px;
+  width:24px;height:24px;border-radius:7px;
+  background:rgba(224,49,49,.1);border:1px solid rgba(224,49,49,.2);
+  color:var(--red);font-size:11px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.no-wells{
+  text-align:center;padding:28px 14px;
+  font-size:.74rem;color:var(--tx3);
+}
+
+/* ══ LITHO COLUMN ══ */
+.litho-upload-area{
+  border:2px dashed var(--bdr2);border-radius:var(--r2);
+  padding:22px 14px;text-align:center;cursor:pointer;
+  background:var(--n8);transition:border-color .18s,background .18s;
+  margin-bottom:12px;
+}
+.litho-upload-area:hover{border-color:var(--n3);background:var(--n7);}
+.litho-upload-area .lu-ico{font-size:32px;margin-bottom:8px;}
+.litho-upload-area .lu-txt{font-size:.74rem;font-weight:700;color:var(--tx2);}
+.litho-upload-area .lu-sub{font-size:.62rem;color:var(--tx3);margin-top:3px;}
+.litho-img-wrap{
+  border:1px solid var(--bdr);border-radius:var(--r2);
+  overflow:hidden;position:relative;margin-bottom:12px;
+  background:var(--n8);
+}
+.litho-img-wrap img{width:100%;display:block;max-height:520px;object-fit:contain;}
+.litho-img-wrap .litho-toolbar{
+  display:flex;gap:8px;padding:10px 12px;
+  border-top:1px solid var(--bdr);background:var(--n7);
+}
+.litho-img-wrap .litho-toolbar button{
+  flex:1;height:36px;border:none;border-radius:10px;
+  font-family:'Tajawal';font-size:.7rem;font-weight:800;cursor:pointer;transition:all .15s;
+}
+.litho-img-wrap .litho-toolbar .tb-del{background:rgba(224,49,49,.1);color:var(--red);}
+.litho-img-wrap .litho-toolbar .tb-save{background:linear-gradient(135deg,var(--n2),var(--n4));color:#fff;}
+.litho-label-box{
+  background:linear-gradient(135deg,var(--n7),#fff);
+  border:1px solid var(--bdr);border-radius:var(--r2);
+  padding:11px 13px;font-size:.72rem;color:var(--tx2);margin-bottom:12px;
+}
+
+/* ══ PRINT BUTTON FLOAT ══ */
+.print-fab{
+  position:fixed;bottom:110px;left:14px;z-index:55;
+  width:52px;height:52px;border-radius:50%;border:none;
+  background:linear-gradient(135deg,#0b1f50,#1148a8);
+  color:#fff;font-size:20px;cursor:pointer;
+  box-shadow:0 4px 18px rgba(11,31,80,.45);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s,box-shadow .15s;
+}
+.print-fab:active{transform:scale(.92);}
+.print-fab-label{
+  position:fixed;bottom:114px;left:73px;z-index:55;
+  background:rgba(11,31,80,.88);color:#fff;padding:5px 11px;
+  border-radius:10px;font-size:.62rem;font-weight:800;
+  font-family:'Tajawal';pointer-events:none;
+  white-space:nowrap;opacity:0;transition:opacity .2s;
+}
+.print-fab:hover + .print-fab-label{ opacity:1; }
+
+/* ══════════════════════════════════════════
+   PRINT REPORT MODAL
+══════════════════════════════════════════ */
+.rpt-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(5,18,46,.72);
+  display:flex;align-items:flex-end;
+  backdrop-filter:blur(4px);
+}
+.rpt-sheet{
+  background:#fff;width:100%;max-height:94vh;
+  border-radius:26px 26px 0 0;
+  display:flex;flex-direction:column;
+  box-shadow:0 -12px 48px rgba(5,18,46,.32);
+}
+.rpt-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px 12px;border-bottom:1px solid var(--bdr);flex-shrink:0;
+  background:linear-gradient(110deg,var(--n7),#fff);
+}
+.rpt-hd h2{font-size:.88rem;font-weight:900;color:var(--n1);display:flex;align-items:center;gap:8px;}
+.rpt-body{overflow-y:auto;flex:1;padding:14px 14px 20px;}
+.rpt-actions{
+  padding:12px 14px;border-top:1px solid var(--bdr);flex-shrink:0;
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;
+  background:linear-gradient(0deg,var(--n7),#fff);
+}
+
+/* ── Report preview card ── */
+.rpt-card{
+  border:1.5px solid var(--bdr2);border-radius:var(--r2);
+  overflow:hidden;margin-bottom:12px;
+}
+.rpt-card-hd{
+  background:linear-gradient(90deg,var(--n1),var(--n2));
+  color:#fff;padding:8px 13px;font-size:.68rem;font-weight:800;
+  display:flex;align-items:center;gap:7px;
+}
+.rpt-card-bd{padding:12px 13px;}
+.rpt-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--n7);font-size:.7rem;
+}
+.rpt-row:last-child{border-bottom:none;}
+.rpt-row .rl{color:var(--tx3);font-weight:700;}
+.rpt-row .rv{color:var(--tx1);font-weight:900;}
+.rpt-layer-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  border-radius:20px;padding:3px 9px;font-size:.6rem;font-weight:800;
+  margin:2px;
+}
+.rpt-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.rpt-sbox{
+  border-radius:var(--r2);padding:10px 10px;text-align:center;
+  border:1px solid var(--bdr);background:var(--n8);
+}
+.rpt-sbox .rsbl{font-size:.55rem;font-weight:700;color:var(--tx3);margin-bottom:3px;}
+.rpt-sbox .rsbv{font-size:.95rem;font-weight:900;color:var(--n2);}
+
+/* ══ WAKE LOCK ══ */
+.btn-ghost.wl-active{
+  background:linear-gradient(135deg,#1a2a1a,#005040)!important;
+  color:#6ee7b7!important;border-color:var(--green)!important;
+}
+
+/* ══ BACKUP TOAST ══ */
+.backup-toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--n1);color:#fff;padding:9px 18px;border-radius:20px;
+  font-size:.68rem;font-weight:800;font-family:'Tajawal';
+  box-shadow:var(--sh2);opacity:0;transition:all .3s;pointer-events:none;z-index:9000;
+  white-space:nowrap;
+}
+.backup-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ══ MISC ══ */
+@media(max-width:360px){.two{grid-template-columns:1fr;}.stats4{grid-template-columns:1fr 1fr;}.well-form{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ══════════ HEADER ══════════ -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="brand">
+      <div class="brand-ico">⚡</div>
+      <div>
+        <div class="brand-name">مقياس المقاومية</div>
+        <div class="brand-sub">SAS 300 · ABEM · Schlumberger</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="badge badge-cyan">🌍 تشكيل<br>شلمبرجير</div>
+    </div>
+  </div>
+  <div class="geo-banner">
+    <span style="font-size:14px;">🧑‍🔬</span>
+    <span class="geo-name">الجيوفيزيائي: وسام الشيخ</span>
+    <span class="geo-sep"></span>
+    <span class="geo-inst">المؤسسة العامة للجيولوجيا والثروة المعدنية</span>
+  </div>
+</div>
+
+<!-- ══════════ MAIN ══════════ -->
+<div class="main-scroll" id="mainScroll">
+
+  <!-- Project -->
+  <div class="card">
+    <div class="card-hd"><div class="chi">🗂</div><h3>معلومات المشروع</h3></div>
+    <div class="card-bd">
+      <div class="fld"><div class="flb">اسم المشروع</div><input type="text" id="projName" placeholder="مثال: مساحة حقل الأمل"></div>
+      <div class="fld"><div class="flb">الاتجاه</div><input type="text" id="projDir" placeholder="شمال – جنوب"></div>
+      <div class="fld">
+        <div class="flb">📍 الإحداثيات (GPS)</div>
+        <div class="gps-row">
+          <input type="text" id="projCoords" placeholder="34.12°N, 36.45°E">
+          <button class="btn-gps" id="gpsBtn" onclick="getGPS()">📡 موقعي</button>
+        </div>
+        <div id="gpsStatus" style="font-size:.62rem;color:var(--tx3);margin-top:4px;display:none;"></div>
+        <button type="button" onclick="viewCoordsOnMap(document.getElementById('projCoords').value)"
+          style="margin-top:7px;width:100%;height:36px;border:1px solid var(--bdr);border-radius:10px;
+          background:var(--n7);color:var(--tx2);font-family:'Tajawal';font-size:.68rem;font-weight:800;cursor:pointer;">
+          🗺️ عرض الموقع على الخريطة
+        </button>
+      </div>
+      <div class="btn-pair">
+        <button class="btn btn-ghost" onclick="saveCurrentProject()">💾 حفظ المشروع</button>
+        <button class="btn btn-ghost" onclick="showLoadProjectDialog()">📂 فتح مشروع</button>
+      </div>
+      <button class="btn btn-ghost" style="margin-top:8px;" onclick="saveAndUploadDrive()">☁️ حفظ ورفع على Google Drive</button>
+    </div>
+  </div>
+
+  <!-- Measure — AUTO MODE -->
+  <div class="card">
+    <div class="card-hd"><div class="chi">⚙️</div><h3>القياس التلقائي — أدخل قيمة الجهاز فقط</h3></div>
+    <div class="card-bd">
+
+      <!-- Progress bar -->
+      <div style="margin-bottom:13px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span style="font-size:.66rem;font-weight:800;color:var(--tx2);">📍 التقدم في التسلسل</span>
+          <span style="font-size:.66rem;font-weight:700;color:var(--tx3);" id="pairProgress">0 / 34</span>
+        </div>
+        <div style="height:7px;background:var(--n7);border-radius:10px;overflow:hidden;border:1px solid var(--bdr);">
+          <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--n2),var(--cyan));border-radius:10px;transition:width .4s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Current pair display -->
+      <div style="background:linear-gradient(135deg,var(--n1),var(--n2));border-radius:var(--r2);padding:14px 15px;margin-bottom:13px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(255,255,255,.02) 8px,rgba(255,255,255,.02) 9px);pointer-events:none;"></div>
+        <div style="font-size:.6rem;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:8px;letter-spacing:.05em;">الزوج الحالي — CURRENT PAIR</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:.55rem;color:rgba(255,255,255,.45);margin-bottom:3px;">AB</div>
+            <div id="dispAB" style="font-size:1.25rem;font-weight:900;color:#fff;line-height:1;">—</div>
+            <div style="font-size:.5rem;color:rgba(255,255,255,.35);">متر</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:.55rem;color:rgba(255,255,255,.45);margin-bottom:3px;">MN</div>
+            <div id="dispMN" style="font-size:1.25rem;font-weight:900;color:#fff;line-height:1;">—</div>
+            <div style="font-size:.5rem;color:rgba(255,255,255,.35);">متر</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:.55rem;color:rgba(255,255,255,.45);margin-bottom:3px;">K</div>
+            <div id="kVal" style="font-size:1.05rem;font-weight:900;color:var(--cyan);line-height:1;">—</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:.55rem;color:rgba(255,255,255,.45);margin-bottom:3px;">عمق</div>
+            <div id="depthVal" style="font-size:1.05rem;font-weight:900;color:#6ee7b7;line-height:1;">—</div>
+            <div style="font-size:.5rem;color:rgba(255,255,255,.35);">متر</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next pair preview -->
+      <div id="nextPairBox" style="background:var(--n8);border:1px dashed var(--bdr2);border-radius:var(--r2);padding:9px 13px;margin-bottom:13px;display:flex;align-items:center;gap:10px;">
+        <span style="font-size:.62rem;color:var(--tx3);font-weight:700;">التالي ←</span>
+        <span id="nextPairLabel" style="font-size:.72rem;font-weight:900;color:var(--tx2);">—</span>
+      </div>
+
+      <!-- R input — big and clear -->
+      <div class="fld">
+        <div class="flb">⚡ قيمة الجهاز R (Ω) — فقط هذا الحقل</div>
+        <input type="number" id="rMeas" placeholder="0.000" step="any" min="0"
+          style="height:56px;font-size:1.2rem;font-weight:900;text-align:center;letter-spacing:.05em;border:2px solid var(--n3);">
+      </div>
+
+      <!-- Result display -->
+      <div class="ic2">
+        <div class="ic c full">
+          <div class="il">⚡ المقاومية الحقيقية ρ = R × K</div>
+          <div class="iv" id="trueRho">— Ω·m</div>
+        </div>
+      </div>
+      <div class="dpill">🔽 عمق الاختراق ≈ <span id="depthNum">0</span> متر</div>
+
+      <div class="fld"><div class="flb">نوع الصخر</div>
+        <select id="rockSel">
+          <option value="limestone">🪨 كلسية</option>
+          <option value="basalt">🌋 بازلتية</option>
+          <option value="sandy">🏖 رملية</option>
+          <option value="mixed">📦 مختلطة</option>
+        </select>
+      </div>
+      <div class="ibox" id="interpBox">أدخل قيمة R من الجهاز</div>
+
+      <!-- Action buttons -->
+      <button class="btn btn-p" onclick="addMeasurement()" id="addBtn">➕ &nbsp;تسجيل وانتقل للزوج التالي</button>
+
+      <!-- Manual override -->
+      <div style="margin-top:10px;border:1px solid var(--bdr);border-radius:var(--r2);overflow:hidden;">
+        <div onclick="toggleManual()" style="padding:9px 13px;background:var(--n8);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+          <span style="font-size:.68rem;font-weight:800;color:var(--tx2);">⚙️ تعديل يدوي للزوج (اختياري)</span>
+          <span id="manualArrow" style="font-size:.65rem;color:var(--tx3);">▼</span>
+        </div>
+        <div id="manualPanel" style="display:none;padding:12px;border-top:1px solid var(--bdr);background:#fff;">
+          <div style="font-size:.62rem;color:var(--tx3);margin-bottom:10px;">⚠️ يستخدم فقط عند الحاجة للقفز إلى زوج محدد</div>
+          <div class="two">
+            <div class="fld"><div class="flb">AB (م)</div><select id="abSel" onchange="onManualABChange()"></select></div>
+            <div class="fld"><div class="flb">MN (م)</div><select id="mnSel" onchange="onManualMNChange()"></select></div>
+          </div>
+          <button class="btn btn-ghost" style="margin-top:0;" onclick="applyManualPair()">✅ تطبيق وانتقل لهذا الزوج</button>
+        </div>
+      </div>
+
+      <!-- Reset sequence -->
+      <button class="btn btn-ghost" style="margin-top:8px;" onclick="resetSequence()">🔄 &nbsp;إعادة التسلسل من البداية</button>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="card">
+    <div class="card-bd">
+      <!-- Wake Lock toggle -->
+      <button class="btn btn-ghost" id="wakeLockBtn" onclick="toggleWakeLock()" style="display:flex;align-items:center;gap:8px;justify-content:center;">
+        <span id="wakeLockIco">🌙</span>
+        <span id="wakeLockTxt">تفعيل إبقاء الشاشة مضاءة</span>
+      </button>
+      <button class="btn btn-g" onclick="exportXLSX()">📥 &nbsp;تصدير Excel</button>
+      <input type="file" id="measFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importMeasurementsExcel(event)">
+      <button class="btn btn-g" style="margin-top:8px;" onclick="document.getElementById('measFileInput').click()">📂 &nbsp;استيراد Excel (تعبئة تلقائية للسجل)</button>
+      <div class="meas-import-note" id="measImportNote" style="display:none;"></div>
+      <button class="btn btn-pdf" onclick="exportPDF()">📄 &nbsp;تصدير PDF (تقرير كامل)</button>
+      <button class="btn btn-r" onclick="clearAll()">🗑 &nbsp;مسح جميع القياسات</button>
+    </div>
+  </div>
+
+  <!-- تقرير أولي قابل للطباعة -->
+  <div class="card">
+    <div class="card-bd" style="padding:14px;">
+      <button class="btn btn-ghost" style="font-size:.75rem;" onclick="openPrintReport()">
+        🖨️ &nbsp;تقرير أولي قابل للطباعة
+      </button>
+    </div>
+  </div>
+
+  <div style="height:14px"></div>
+</div>
+
+<!-- PRINT FAB -->
+<button class="print-fab" onclick="openPrintReport()" title="طباعة تقرير أولي">🖨️</button>
+<span class="print-fab-label">تقرير أولي</span>
+
+<!-- PRINT REPORT MODAL -->
+<div class="rpt-overlay" id="rptOverlay" style="display:none;" onclick="if(event.target===this)closePrintReport()">
+  <div class="rpt-sheet">
+    <div class="rpt-hd">
+      <h2>🖨️ تقرير أولي ميداني</h2>
+      <div class="sheet-close" onclick="closePrintReport()">✕</div>
+    </div>
+    <div class="rpt-body" id="rptBody"></div>
+    <div class="rpt-actions">
+      <button class="btn btn-p" style="margin:0;" onclick="printReportNow()">🖨️ طباعة</button>
+      <button class="btn btn-pdf" style="margin:0;" onclick="exportPDF()">📄 تصدير PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ BOTTOM NAV ══════════ -->
+<div class="btm-wrap">
+  <div class="btm-geo">
+    <span>©</span>
+    <span class="gn">الجيوفيزيائي: وسام الشيخ</span>
+    <span class="gd">·</span>
+    <span class="gd">SAS 300 · ABEM · Schlumberger</span>
+  </div>
+  <nav class="btm-nav">
+    <div class="btm-btn" onclick="openSheet('chart')"><span class="bi">📈</span><span class="bl">المنحنيات</span></div>
+    <div class="btm-btn" onclick="openSheet('data')"><span class="bi">📋</span><span class="bl">البيانات</span></div>
+    <div class="btm-btn" onclick="openSheet('wells')"><span class="bi">🪣</span><span class="bl">الآبار</span></div>
+    <div class="btm-btn" onclick="openSheet('map')"><span class="bi">🗺️</span><span class="bl">الخريطة</span></div>
+    <div class="btm-btn" onclick="openSheet('litho')"><span class="bi">🪨</span><span class="bl">ليتولوجي</span></div>
+    <div class="btm-btn" onclick="openSheet('ref')"><span class="bi">📚</span><span class="bl">مرجع</span></div>
+    <div class="btm-btn" onclick="openSheet('notes')"><span class="bi">✏️</span><span class="bl">ملاحظات</span></div>
+  </nav>
+</div>
+
+<!-- OVERLAY -->
+<div class="sheet-overlay" id="overlay" onclick="closeSheet()"></div>
+
+<!-- ══════════ SHEET: CHART ══════════ -->
+<div class="sheet" id="sheet-chart">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">📈</span>رسم المنحنيات والمقطع الجيوكهربائي</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+
+    <!-- ═══ AB/2 CURVE (استيراد + منحنى AB) ═══ -->
+    <div class="ab-section">
+      <div class="ab-hd">
+        <span>📈 &nbsp;منحنى AB/2 — المقاومية الحقيقية</span>
+        <div class="ab-scale-tog">
+          <span class="ab-scale-btn on" id="abScaleLogBtn" onclick="setAbScale('log')">Log-Log</span>
+          <span class="ab-scale-btn" id="abScaleLinBtn" onclick="setAbScale('lin')">خطي-Log</span>
+        </div>
+      </div>
+      <div class="ab-import-row" style="margin-top:8px;">
+        <button class="btn btn-pdf" style="margin:0;flex:1;" onclick="exportCurvesPDF()">📄 &nbsp;تصدير تقرير المنحنيات PDF</button>
+      </div>
+      <div class="ab-import-row">
+        <input type="file" id="abFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importAbExcel(event)">
+        <button class="btn btn-g" style="margin:0;" onclick="document.getElementById('abFileInput').click()">📂 استيراد Excel</button>
+        <button class="btn btn-ghost" style="margin:0;" onclick="clearAbImport()">🗑 مسح المستورد</button>
+      </div>
+      <div class="ab-chart-box"><canvas id="abChart"></canvas></div>
+      <div class="ab-split-row">
+        <div class="vtbtn" id="abSplitBtn" onclick="toggleAbSplitMode()">✂️ تقسيم على المنحني</div>
+        <div class="vtbtn warn" id="abSplitResetBtn" onclick="resetVgeoBreaks()">↺ إعادة ضبط</div>
+      </div>
+      <div class="ab-split-hint" id="abSplitHint">
+        ✋ <strong>وضع التقسيم مفعّل:</strong> اضغط على أي نقطة من المنحني لإضافة خط تقسيم (split) عمودي عندها — يقسّم المنحني إلى قطعتين، كل قطعة بميلها المستقيم الخاص. اسحب أي خط تقسيم لتحريكه، أو اضغط عليه ضغطاً مزدوجاً (أو مطوّلاً باللمس) لحذفه. التقسيم ينعكس فوراً على المقطع الجيوكهربائي وجدول الطبقات أدناه.
+      </div>
+      <div class="ab-seg-tbl-wrap" id="abSegTblWrap">
+        <div class="ab-seg-tbl-hd">📐 قطع المنحني المقسّمة (Segments) — الميل يمثّل خاصية كل طبقة</div>
+        <table class="ab-seg-tbl">
+          <thead><tr><th>#</th><th>AB/2 من→إلى (م)</th><th>الميل (Δlogρ/ΔlogAB)</th><th>ρ متوسطة</th><th>النمط</th></tr></thead>
+          <tbody id="abSegTbody"></tbody>
+        </table>
+      </div>
+      <div class="ab-import-note" id="abImportNote" style="display:none;"></div>
+    </div>
+
+    <!-- ═══ VERTICAL GEO-ELECTRIC SECTION (IPI-style discrete layers) ═══ -->
+    <div class="vgeo-section">
+      <div class="vgeo-hd">
+        <span>🎨 &nbsp;المقطع الجيوكهربائي الرأسي — نموذج الطبقات (IPI Style)</span>
+        <div class="vgeo-mode-tog">
+          <span class="vgeo-mode-btn on" id="vgeoModeLayersBtn" onclick="setVgeoMode('layers')">طبقات</span>
+          <span class="vgeo-mode-btn" id="vgeoModeGradBtn" onclick="setVgeoMode('gradient')">تدرّج</span>
+        </div>
+      </div>
+      <div class="vgeo-tools-row">
+        <div class="vtbtn" id="vgeoAutoBtn" onclick="autoSegmentVgeo()">⚡ تقسيم تلقائي</div>
+        <div class="vtbtn" id="vgeoEditBtn" onclick="toggleVgeoEditMode()">✏️ تعديل يدوي</div>
+        <div class="vtbtn warn" id="vgeoResetBtn" onclick="resetVgeoBreaks()">↺ إعادة ضبط</div>
+      </div>
+      <div class="vgeo-edit-hint" id="vgeoEditHint">
+        ✋ <strong>وضع التعديل اليدوي مفعّل:</strong> اضغط على المقطع لإضافة حد فاصل بين طبقتين عند نقطة الضغط. اسحب أي خط فاصل أبيض لتحريكه. اضغط ضغطاً مطوّلاً (أو مرتين) على خط فاصل لحذفه.
+      </div>
+      <div class="vgeo-body">
+        <div class="vgeo-canvas-wrap">
+          <div class="vgeo-depth-ticks" id="vgeoDepthTicks"></div>
+          <canvas id="vgeoCanvas" height="320"></canvas>
+          <div class="vgeo-tooltip" id="vgeoTooltip"></div>
+        </div>
+        <div class="vgeo-legend">
+          <div class="vgeo-legend-lbl">مرتفعة<br>(جاف)</div>
+          <canvas id="vgeoLegend" width="22" height="220"></canvas>
+          <div class="vgeo-legend-lbl">منخفضة<br>(مائي)</div>
+        </div>
+      </div>
+      <div class="vgeo-scale-row" id="vgeoScaleRow"></div>
+
+      <!-- جدول الطبقات — يحاكي جدول N / ρ / h / d في IPI2Win -->
+      <div class="vgeo-tbl-wrap">
+        <div class="vgeo-tbl-hd">📋 جدول الطبقات المفسَّرة</div>
+        <table class="vgeo-tbl">
+          <thead><tr><th>N</th><th>ρ (Ω·m)</th><th>h (م)</th><th>d (م)</th><th>التفسير</th></tr></thead>
+          <tbody id="vgeoLayerTbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="vgeo-note" id="vgeoNote">
+      📌 <strong>قراءة المقطع:</strong> كل طبقة تُعرض بلون موحّد وسماكة (h) تعكس عمقها الفعلي، بحدود واضحة بين الطبقات — على غرار عرض IPI2Win. الألوان الفاتحة (أزرق/سماوي) = مقاومية منخفضة (مؤشر تشبع مائي محتمل)، والألوان الغامقة (برتقالي/أحمر/بني) = مقاومية مرتفعة (طبقات جافة/صخرية).
+    </div>
+
+    <!-- ═══ AQUIFER BREAK DETECTION ═══ -->
+    <div class="brk-section">
+      <div class="brk-card">
+        <div class="brk-hd">💧 &nbsp;كشف الحوامل المائية المحتملة (عمق 75 م فأكثر)</div>
+        <div class="brk-body" id="brkBody">
+          <div class="brk-empty">أدخل أو استورد 3 قياسات على الأقل لتفعيل التحليل</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="curve-toggles" style="margin-top:14px;">
+      <div class="c-tog on" data-c="field" onclick="toggleCurve('field')">📊 القياس الحقلي</div>
+      <div class="c-tog" data-c="dry"   onclick="toggleCurve('dry')">🏜️ نموذج جاف</div>
+      <div class="c-tog" data-c="water" onclick="toggleCurve('water')">💧 نموذج مائي</div>
+      <div class="c-tog" data-c="two"   onclick="toggleCurve('two')">📉 طبقتان</div>
+      <div class="c-tog" data-c="three" onclick="toggleCurve('three')">📊 ثلاث طبقات</div>
+    </div>
+    <div class="chart-box"><canvas id="rhoChart"></canvas></div>
+
+    <!-- Geo-electric section -->
+    <div class="geo-section" id="geoSec" style="display:none;">
+      <div class="geo-hd">🎨 &nbsp;المقطع الجيوكهربائي — المقاومية مقابل العمق</div>
+      <div class="geo-bars" id="geoBars"></div>
+    </div>
+
+    <div class="stats4">
+      <div class="sb tot"><div class="sl">قياسات</div><div class="sv" id="sCount">0</div></div>
+      <div class="sb mx"><div class="sl">أقصى ρ</div><div class="sv" id="sMax">—</div></div>
+      <div class="sb mn"><div class="sl">أدنى ρ</div><div class="sv" id="sMin">—</div></div>
+      <div class="sb av"><div class="sl">متوسط ρ</div><div class="sv" id="sAvg">—</div></div>
+    </div>
+    <div class="chart-note">
+      <strong>📌 تفسير المقارنة:</strong> قرب المنحنى الحقلي من المنحنى المائي يشير إلى وجود مياه جوفية، بينما القرب من النموذج الجاف يدل على طبقات جافة. العمق الفعال ≈ AB/3.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHEET: DATA ══════════ -->
+<div class="sheet" id="sheet-data">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">📋</span>سجل القياسات</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div class="tbl-wrap">
+      <table class="dtbl">
+        <thead><tr><th>#</th><th>AB(م)</th><th>MN(م)</th><th>K</th><th>R(Ω)</th><th>ρ(Ω·m)</th><th>عمق(م)</th><th>صخر</th><th>وقت</th><th>حذف</th></tr></thead>
+        <tbody id="dataTbody">
+          <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--tx3);">لا توجد قياسات</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHEET: REF ══════════ -->
+<div class="sheet" id="sheet-ref">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">📚</span>المرجع والثوابت</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div style="padding:14px;">
+      <div style="font-size:.74rem;font-weight:800;color:var(--tx2);margin-bottom:9px;">جدول ثوابت K — شلمبرجير (AB حتى 2000م)</div>
+      <div class="rtbl-wrap">
+        <table class="rtbl">
+          <thead><tr><th>AB (م)</th><th>MN (م)</th><th>K</th><th>عمق (م)</th></tr></thead>
+          <tbody id="refTbody"></tbody>
+        </table>
+      </div>
+      <div style="font-size:.74rem;font-weight:800;color:var(--tx2);margin:4px 0 9px;">مرجع تفسير المقاومية الكهربائية</div>
+      <div class="rtbl-wrap">
+        <table class="rtbl">
+          <thead><tr><th>ρ (Ω·m)</th><th>التفسير الجيولوجي</th></tr></thead>
+          <tbody>
+            <tr><td><span class="chip cv">&lt; 20</span></td><td>تشبع كامل بالمياه</td></tr>
+            <tr><td><span class="chip cl">20 – 80</span></td><td>رطوبة عالية / طين مشبع</td></tr>
+            <tr><td><span class="chip cm">80 – 300</span></td><td>رطوبة متوسطة / صخور مكسورة</td></tr>
+            <tr><td><span class="chip ch">300 – 800</span></td><td>جاف نسبياً</td></tr>
+            <tr><td><span class="chip cv2">&gt; 800</span></td><td>جاف جداً / بازلت أو رمل جاف</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ref-credit">
+        🧑‍🔬 <strong>الجيوفيزيائي: وسام الشيخ</strong><br>
+        <span style="font-size:.62rem;color:var(--tx3);">المؤسسة العامة للجيولوجيا والثروة المعدنية</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHEET: SCALE ══════════ -->
+<div class="sheet" id="sheet-scale">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">🎨</span>سلم المقاومية</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div style="padding:14px;">
+      <div class="scale-blk">
+        <div class="scale-ttl">📊 سلم المقاومية الكهربائية (Ω·m)</div>
+        <div class="scale-gr"></div>
+        <div class="scale-lbl"><span>0</span><span>20</span><span>80</span><span>300</span><span>800</span><span>+800</span></div>
+      </div>
+      <div style="background:var(--n7);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;font-size:.72rem;color:var(--tx2);line-height:1.8;">
+        <strong>📌 ملاحظات جهاز SAS 300:</strong><br>
+        • المقاومية الحقيقية = R × K<br>
+        • العمق الفعال ≈ AB/3<br>
+        • ρ &lt; 20 Ω·m → تشبع مائي كامل<br>
+        • 20–80 Ω·m → رطوبة عالية<br>
+        • 80–300 Ω·m → رطوبة متوسطة<br>
+        • 300–800 Ω·m → جاف نسبياً<br>
+        • &gt; 800 Ω·m → جاف جداً
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHEET: NOTES ══════════ -->
+<div class="sheet" id="sheet-notes">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">✏️</span>ملاحظات المشروع</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div class="notes-area">
+      <textarea id="projectNotes" placeholder="أدخل ملاحظاتك هنا (ستُضمن في تقرير PDF)…"></textarea>
+    </div>
+    <div style="padding:0 14px 14px;">
+      <button class="btn btn-ghost" onclick="saveLS();closeSheet()">💾 &nbsp;حفظ وإغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHEET: WELLS ══════════ -->
+<div class="sheet" id="sheet-wells">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">🪣</span>قاعدة بيانات الآبار</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div style="padding:14px 14px 0;">
+      <!-- Add well form -->
+      <div style="background:var(--n7);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;margin-bottom:14px;">
+        <div style="font-size:.74rem;font-weight:800;color:var(--tx2);margin-bottom:10px;">➕ إضافة بئر جديدة</div>
+        <div class="well-form">
+          <div class="fld full"><div class="flb">اسم البئر</div><input type="text" id="wName" placeholder="مثال: بئر الأمل-1"></div>
+          <div class="fld full"><div class="flb">المنطقة</div><input type="text" id="wArea" placeholder="مثال: ريف دمشق – قطنا"></div>
+          <div class="fld"><div class="flb">العمق النهائي (م)</div><input type="number" id="wDepth" placeholder="مثال: 350" step="any" min="0"></div>
+          <div class="fld"><div class="flb">الغزارة (م³/ساعة)</div><input type="number" id="wFlow" placeholder="مثال: 12" step="any" min="0"></div>
+          <div class="fld"><div class="flb">منسوب الماء (م)</div><input type="number" id="wLevel" placeholder="مثال: 45" step="any"></div>
+          <div class="fld"><div class="flb">سنة الحفر</div><input type="number" id="wYear" placeholder="مثال: 2019" min="1950" max="2099"></div>
+          <div class="fld full">
+            <div class="flb">نوع الصخور المخترقة</div>
+            <select id="wRock">
+              <option value="كلسية">🪨 كلسية</option>
+              <option value="بازلتية">🌋 بازلتية</option>
+              <option value="رملية">🏖 رملية</option>
+              <option value="طينية">🟤 طينية</option>
+              <option value="مختلطة">📦 مختلطة</option>
+            </select>
+          </div>
+          <div class="fld full">
+            <div class="flb">📍 إحداثيات البئر</div>
+            <div class="gps-row">
+              <input type="text" id="wCoords" placeholder="34.12°N, 36.45°E">
+              <button class="btn-gps" onclick="getGPSWell()">📡 موقعي</button>
+            </div>
+            <button type="button" onclick="viewCoordsOnMap(document.getElementById('wCoords').value)"
+              style="margin-top:7px;width:100%;height:36px;border:1px solid var(--bdr);border-radius:10px;
+              background:var(--n7);color:var(--tx2);font-family:'Tajawal';font-size:.68rem;font-weight:800;cursor:pointer;">
+              🗺️ عرض الموقع على الخريطة
+            </button>
+          </div>
+          <div class="fld full"><div class="flb">ملاحظات</div><input type="text" id="wNotes" placeholder="أي ملاحظات إضافية"></div>
+        </div>
+        <button class="btn btn-p" style="margin-top:4px;" onclick="addWell()">💾 &nbsp;حفظ البئر</button>
+      </div>
+
+      <!-- Wells list -->
+      <div style="font-size:.74rem;font-weight:800;color:var(--tx2);margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;">
+        <span>📋 قائمة الآبار</span>
+        <span id="wellsCount" style="font-size:.62rem;color:var(--tx3);">0 بئر</span>
+      </div>
+      <div class="wells-list" id="wellsList">
+        <div class="no-wells">🪣 لا توجد آبار مسجلة بعد</div>
+      </div>
+    </div>
+    <div style="padding:10px 14px 14px;">
+      <button class="btn btn-ghost" onclick="exportWellsXLSX()">📥 تصدير آبار Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHEET: MAP ══════════ -->
+<div class="sheet" id="sheet-map">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">🗺️</span>الخريطة الميدانية</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div style="padding:14px;">
+      <div class="litho-label-box">
+        📌 تعرض هذه الخريطة موقع المشروع الحالي وجميع الآبار المسجّلة معاً. تحتاج اتصالاً بالإنترنت لتحميل بلاطات الخريطة أول مرة.
+      </div>
+      <div id="fieldMapStatus" style="font-size:.68rem;color:var(--tx3);margin-bottom:10px;"></div>
+      <div id="fieldMapEl" style="width:100%;height:340px;border-radius:var(--r2);border:1px solid var(--bdr);overflow:hidden;background:var(--n7);"></div>
+      <div style="display:flex;gap:9px;margin-top:10px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="renderFieldMap(true)">🔄 تحديث الخريطة</button>
+      </div>
+      <div style="font-size:.74rem;font-weight:800;color:var(--tx2);margin:16px 0 9px;">📋 النقاط المعروضة</div>
+      <div class="wells-list" id="fieldMapList">
+        <div class="no-wells">لا توجد نقاط بعد — أضف إحداثيات المشروع أو آبار</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SHEET: LITHO ══════════ -->
+<div class="sheet" id="sheet-litho">
+  <div class="sheet-pill"></div>
+  <div class="sheet-hd">
+    <h2><span class="sh-ico">🪨</span>العمود الليتولوجي</h2>
+    <div class="sheet-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="sheet-body">
+    <div style="padding:14px;">
+      <div class="litho-label-box">
+        📌 استورد صورة العمود الليتولوجي من الاستديو أو أي مصدر آخر. تُحفظ الصورة في المتصفح مع المشروع.
+      </div>
+
+      <!-- Upload area (shown when no image) -->
+      <div id="lithoUploadArea" class="litho-upload-area" onclick="document.getElementById('lithoFileInput').click()">
+        <div class="lu-ico">🗂️</div>
+        <div class="lu-txt">اضغط لاستيراد صورة العمود الليتولوجي</div>
+        <div class="lu-sub">PNG · JPG · JPEG · WEBP — من الاستديو أو من معرض الصور</div>
+      </div>
+      <input type="file" id="lithoFileInput" accept="image/*" style="display:none" onchange="loadLithoImage(event)">
+
+      <!-- Image view (hidden until loaded) -->
+      <div id="lithoImgWrap" class="litho-img-wrap" style="display:none;">
+        <img id="lithoImg" src="" alt="العمود الليتولوجي">
+        <div class="litho-toolbar">
+          <button class="tb-del" onclick="clearLitho()">🗑 حذف الصورة</button>
+          <button class="tb-save" onclick="saveLithoLS()">💾 حفظ</button>
+        </div>
+      </div>
+
+      <!-- Caption -->
+      <div class="fld" id="lithoCaptionBox" style="display:none;">
+        <div class="flb">وصف العمود</div>
+        <input type="text" id="lithoCaption" placeholder="مثال: رقعة جنوب دمشق 1:200000" oninput="saveLithoLS()">
+      </div>
+
+      <!-- Depth legend -->
+      <div id="lithoLegend" style="display:none;background:var(--n7);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px;font-size:.72rem;color:var(--tx2);line-height:1.8;">
+        <strong>📏 مرجع أعماق الطبقات:</strong><br>
+        <span style="color:var(--tx3);">تُملأ بناءً على العمود الليتولوجي المستورد</span><br>
+        <div class="fld" style="margin-top:9px;margin-bottom:0;">
+          <div class="flb">وصف الطبقات</div>
+          <textarea id="lithoLayers" rows="5"
+            style="width:100%;padding:10px;border:1.5px solid var(--n6);border-radius:var(--r2);font-family:'Tajawal';font-size:.75rem;resize:vertical;background:var(--n8);"
+            placeholder="0-15م: رواسب رباعية&#10;15-250م: نيوجين&#10;250-450م: باليوجين&#10;450-650م: طباشيري"
+            oninput="saveLithoLS()"></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
+const calibrationData=[
+  {ab:1.5,mn:1,k:6.28},{ab:3,mn:2,k:12.57},{ab:5,mn:2,k:37.7},
+  {ab:7,mn:2,k:75.4},{ab:10,mn:2,k:155.51},{ab:10,mn:5,k:58.9},
+  {ab:15,mn:5,k:137.44},{ab:20,mn:5,k:247.4},{ab:30,mn:5,k:561.56},
+  {ab:40,mn:5,k:1001.38},{ab:50,mn:5,k:1566.87},{ab:50,mn:20,k:376.99},
+  {ab:70,mn:20,k:753.98},{ab:100,mn:20,k:1555.09},{ab:150,mn:20,k:3518.58},
+  {ab:200,mn:20,k:6267.48},{ab:200,mn:80,k:1507.96},{ab:300,mn:20,k:14121.46},
+  {ab:300,mn:80,k:3471.46},{ab:400,mn:80,k:6220.35},{ab:500,mn:20,k:39254.2},
+  {ab:500,mn:80,k:9754.65},{ab:500,mn:200,k:3769.91},
+  {ab:750,mn:200,k:8678.65},{ab:750,mn:300,k:5654.87},
+  {ab:1000,mn:200,k:15550.88},{ab:1000,mn:300,k:10236.36},
+  {ab:1500,mn:200,k:35185.84},{ab:1500,mn:300,k:23326.33},{ab:1500,mn:500,k:13744.47},
+  {ab:2000,mn:200,k:62674.77},{ab:2000,mn:300,k:41652.28},{ab:2000,mn:500,k:24740.04},{ab:2000,mn:800,k:15079.64}
+];
+
+/* مرتبة تصاعدياً حسب AB ثم MN */
+const sequence = [...calibrationData].sort((a,b)=>(a.ab-b.ab)||(a.mn-b.mn));
+const abValues=[...new Set(calibrationData.map(d=>d.ab))].sort((a,b)=>a-b);
+
+let measurements=[], chart=null, currentSheet=null;
+let visibleCurves={field:true,dry:false,water:false,two:false,three:false};
+let currentPairIndex = 0;
+let wells = [];   /* قاعدة بيانات الآبار */
+
+/* ═══ AB/2 CURVE STATE ═══ */
+let abChart = null;
+let abScaleMode = 'log';      /* 'log' = Log-Log | 'lin' = خطي أفقي / لوغاريتمي شاقولي */
+let importedAbData = [];      /* بيانات مستوردة من Excel: [{ab2, rho, source:'imported'}] */
+
+/* DOM */
+const kSpan       = document.getElementById('kVal');
+const depthSpan   = document.getElementById('depthVal');
+const rMeas       = document.getElementById('rMeas');
+const trueRhoS    = document.getElementById('trueRho');
+const depthNumS   = document.getElementById('depthNum');
+const rockSel     = document.getElementById('rockSel');
+const interpBox   = document.getElementById('interpBox');
+const abSel       = document.getElementById('abSel');
+const mnSel       = document.getElementById('mnSel');
+const projNameI   = document.getElementById('projName');
+const projDirI    = document.getElementById('projDir');
+const projCoordI  = document.getElementById('projCoords');
+const overlay     = document.getElementById('overlay');
+const projectNotes= document.getElementById('projectNotes');
+
+/* ═══ SCROLL HEIGHT ═══ */
+function setScrollHeight(){
+  const hdr=document.querySelector('.hdr');
+  const btm=document.querySelector('.btm-wrap');
+  const ms=document.getElementById('mainScroll');
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  ms.style.height=(vh - hdr.offsetHeight - btm.offsetHeight)+'px';
+}
+window.addEventListener('resize',setScrollHeight);
+window.addEventListener('load',setScrollHeight);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',setScrollHeight);
+  window.visualViewport.addEventListener('scroll',setScrollHeight);
+}
+setTimeout(setScrollHeight,200);
+/* When R input is focused, scroll it into view smoothly */
+document.addEventListener('DOMContentLoaded',()=>{
+  const ri = document.getElementById('rMeas');
+  if(ri){
+    ri.addEventListener('focus',()=>{
+      setTimeout(()=>{ri.scrollIntoView({behavior:'smooth',block:'center'});},300);
+    });
+  }
+});
+
+/* ═══════════════════════════════════════
+   AUTO SEQUENCE FUNCTIONS
+═══════════════════════════════════════ */
+
+/* عرض الزوج الحالي على الشاشة */
+function displayCurrentPair(){
+  const total = sequence.length;
+  if(currentPairIndex >= total){
+    document.getElementById('dispAB').textContent = '✓';
+    document.getElementById('dispMN').textContent = '✓';
+    kSpan.textContent = '—';
+    depthSpan.textContent = '—';
+    depthNumS.textContent = '0';
+    document.getElementById('pairProgress').textContent = total + ' / ' + total;
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('nextPairLabel').textContent = 'اكتمل التسلسل 🎉';
+    document.getElementById('addBtn').textContent = '✅ تم الانتهاء';
+    document.getElementById('addBtn').disabled = true;
+    trueRhoS.textContent = '— Ω·m';
+    interpBox.textContent = '✅ اكتمل التسلسل الكامل';
+    return;
+  }
+
+  document.getElementById('addBtn').disabled = false;
+  document.getElementById('addBtn').innerHTML = '➕ &nbsp;تسجيل وانتقل للزوج التالي';
+
+  const pair = sequence[currentPairIndex];
+  document.getElementById('dispAB').textContent = pair.ab;
+  document.getElementById('dispMN').textContent = pair.mn;
+  kSpan.textContent = pair.k.toFixed(3);
+  const depth = (pair.ab/3).toFixed(2);
+  depthSpan.textContent = depth;
+  depthNumS.textContent = depth;
+
+  /* شريط التقدم */
+  document.getElementById('pairProgress').textContent = currentPairIndex + ' / ' + total;
+  document.getElementById('progressBar').style.width = ((currentPairIndex/total)*100).toFixed(1)+'%';
+
+  /* الزوج التالي */
+  if(currentPairIndex+1 < total){
+    const nxt = sequence[currentPairIndex+1];
+    document.getElementById('nextPairLabel').textContent = `AB = ${nxt.ab} م  ·  MN = ${nxt.mn} م  ·  K = ${nxt.k.toFixed(2)}`;
+  } else {
+    document.getElementById('nextPairLabel').textContent = 'آخر زوج في التسلسل';
+  }
+
+  computeRho();
+}
+
+/* ═══ SHEETS ═══ */
+function openSheet(id){
+  if(currentSheet)closeSheetNow();
+  currentSheet=id;
+  overlay.classList.add('show');
+  document.getElementById('sheet-'+id).classList.add('show');
+  const map={chart:0,data:1,wells:2,map:3,litho:4,ref:5,notes:6};
+  document.querySelectorAll('.btm-btn').forEach((b,i)=>{b.classList.remove('open');if(map[id]===i)b.classList.add('open');});
+  if(id==='chart'){updateChartData();updateGeoSection();updateAbChart();updateAquiferBreaks();updateVerticalGeoSection();}
+  if(id==='wells'){renderWells();}
+  if(id==='litho'){loadLithoLS();}
+  if(id==='map'){setTimeout(()=>renderFieldMap(false), 60);}
+}
+function closeSheetNow(){
+  if(!currentSheet)return;
+  document.getElementById('sheet-'+currentSheet).classList.remove('show');
+  document.querySelectorAll('.btm-btn').forEach(b=>b.classList.remove('open'));
+  currentSheet=null;
+}
+function closeSheet(){overlay.classList.remove('show');closeSheetNow();}
+
+/* ═══ MANUAL OVERRIDE ═══ */
+function toggleManual(){
+  const p = document.getElementById('manualPanel');
+  const a = document.getElementById('manualArrow');
+  const open = p.style.display === 'block';
+  p.style.display = open ? 'none' : 'block';
+  a.textContent = open ? '▼' : '▲';
+  if(!open) populateManualSelectors();
+}
+
+function populateManualSelectors(){
+  abSel.innerHTML='';
+  abValues.forEach(ab=>{
+    let o=document.createElement('option');
+    o.value=ab; o.textContent=ab+' م';
+    abSel.appendChild(o);
+  });
+  const curPair = sequence[Math.min(currentPairIndex, sequence.length-1)];
+  if(curPair) abSel.value = curPair.ab;
+  populateManualMN(parseFloat(abSel.value));
+}
+
+function populateManualMN(ab){
+  let mns=calibrationData.filter(d=>d.ab===ab).map(d=>d.mn).sort((a,b)=>a-b);
+  mnSel.innerHTML='';
+  mns.forEach(mn=>{let o=document.createElement('option');o.value=mn;o.textContent=mn+' م';mnSel.appendChild(o);});
+  const curPair = sequence[Math.min(currentPairIndex, sequence.length-1)];
+  if(curPair && curPair.ab===ab) mnSel.value=curPair.mn;
+}
+
+function onManualABChange(){ populateManualMN(parseFloat(abSel.value)); }
+function onManualMNChange(){}
+
+function applyManualPair(){
+  const ab=parseFloat(abSel.value), mn=parseFloat(mnSel.value);
+  const idx = sequence.findIndex(p=>p.ab===ab && p.mn===mn);
+  if(idx === -1){ alert('هذا الزوج غير موجود في التسلسل'); return; }
+  currentPairIndex = idx;
+  rMeas.value='';
+  trueRhoS.textContent='— Ω·m';
+  displayCurrentPair();
+  /* أغلق اللوحة اليدوية */
+  document.getElementById('manualPanel').style.display='none';
+  document.getElementById('manualArrow').textContent='▼';
+  saveLS();
+}
+
+function resetSequence(){
+  if(!confirm('إعادة التسلسل من AB=1.5؟ (لن تُحذف القياسات المسجلة)')) return;
+  currentPairIndex=0;
+  rMeas.value='';
+  trueRhoS.textContent='— Ω·m';
+  interpBox.textContent='أدخل قيمة R من الجهاز';
+  displayCurrentPair();
+  saveLS();
+}
+
+/* ═══ POPULATE ═══ */
+function populateAB(){
+  /* للتوافق مع populateMN الذي لم يتغير */
+  abSel.innerHTML='';
+  abValues.forEach(ab=>{let o=document.createElement('option');o.value=ab;o.textContent=ab+' م';abSel.appendChild(o);});
+  displayCurrentPair();
+}
+
+function updateK(){
+  /* لا تُستخدم في الوضع التلقائي */
+  displayCurrentPair();
+}
+
+function computeRho(){
+  if(currentPairIndex >= sequence.length) return;
+  const pair = sequence[currentPairIndex];
+  const R=parseFloat(rMeas.value), K=pair.k;
+  if(isNaN(R)||R<=0){trueRhoS.textContent='— Ω·m';interpret(null);return;}
+  const rho=R*K;
+  trueRhoS.textContent=rho.toFixed(2)+' Ω·m';
+  interpret(rho);
+}
+
+function interpret(rho){
+  if(rho===null){interpBox.innerHTML='أدخل قيمة R من الجهاز';return;}
+  let v='';
+  if(rho<20)v='⚠️ تشبع كامل بالمياه (منسوب مائي قريب)';
+  else if(rho<80)v='💧 طبقة مشبعة بالماء أو طين رطب';
+  else if(rho<300)v='🌊 رطوبة معتدلة / صخور مكسورة';
+  else if(rho<800)v='🏜️ طبقة جافة نسبياً';
+  else v='🔥 صخر جاف جداً (بازلت أو رمل جاف)';
+  interpBox.innerHTML=`<strong>${rockSel.options[rockSel.selectedIndex].text}:</strong> ${v}`;
+}
+
+/* ═══ MEASUREMENTS ═══ */
+function addMeasurement(){
+  if(currentPairIndex >= sequence.length){ alert('اكتمل التسلسل'); return; }
+  const pair = sequence[currentPairIndex];
+  const R=parseFloat(rMeas.value);
+  if(isNaN(R)||R<=0){alert('أدخل مقاومة ظاهرية موجبة');return;}
+  const rho=R*pair.k, depth=pair.ab/3;
+  const rock=rockSel.options[rockSel.selectedIndex].text;
+  const now=new Date();
+  const timeStr=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  measurements.push({ab:pair.ab,mn:pair.mn,k:pair.k,measured:R,rho,depth,rock,time:timeStr});
+  measurements.sort((a,b)=>a.depth-b.depth);
+
+  /* تقدم تلقائي */
+  currentPairIndex++;
+  rMeas.value='';
+  trueRhoS.textContent='— Ω·m';
+  interpBox.textContent='أدخل قيمة R من الجهاز';
+
+  displayCurrentPair();
+  updateTable();updateStats();updateChartData();updateGeoSection();updateAbChart();updateAquiferBreaks();updateVerticalGeoSection();saveLS();
+
+  /* صوت تأكيد */
+  playBeep();
+
+  /* نسخ احتياطي تلقائي كل 10 قياسات */
+  if(measurements.length % 10 === 0) autoBackup();
+
+  
+
+  /* إضاءة بصرية للتأكيد */
+  const btn=document.getElementById('addBtn');
+  btn.style.background='linear-gradient(135deg,#005040,var(--green))';
+  setTimeout(()=>{btn.style.background='';},600);
+
+  rMeas.focus();
+}
+
+function deleteMeasurement(i){
+  if(!confirm('حذف هذا القياس؟'))return;
+  measurements.splice(i,1);
+  updateTable();updateStats();updateChartData();updateGeoSection();updateAbChart();updateAquiferBreaks();updateVerticalGeoSection();saveLS();
+}
+
+function updateTable(){
+  let tb=document.getElementById('dataTbody');
+  if(!measurements.length){tb.innerHTML='<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--tx3);">لا توجد قياسات</td></tr>';return;}
+  tb.innerHTML='';
+  measurements.forEach((m,i)=>{
+    let r=tb.insertRow();
+    [i+1,m.ab,m.mn,m.k.toFixed(2),m.measured,m.rho.toFixed(2),m.depth.toFixed(2),m.rock,m.time||'—']
+      .forEach(v=>{r.insertCell(-1).innerText=v;});
+    let dc=r.insertCell(-1);
+    let btn=document.createElement('button');btn.className='del-btn';btn.innerText='✕';
+    btn.onclick=()=>deleteMeasurement(i);dc.appendChild(btn);
+  });
+}
+
+function updateStats(){
+  let c=measurements.length;document.getElementById('sCount').innerText=c;
+  if(!c){['sMax','sMin','sAvg'].forEach(id=>document.getElementById(id).innerText='—');return;}
+  let rhos=measurements.map(m=>m.rho);
+  document.getElementById('sMax').innerText=Math.max(...rhos).toFixed(1);
+  document.getElementById('sMin').innerText=Math.min(...rhos).toFixed(1);
+  document.getElementById('sAvg').innerText=(rhos.reduce((a,b)=>a+b,0)/c).toFixed(1);
+}
+
+/* ═══ CHART ═══ */
+const models={
+  dry:d=>500+20*d,
+  water:d=>15+2*Math.sin(d/10),
+  two:d=>d<20?400-10*d:30+(d-20)*.5,
+  three:d=>d<10?80:d<30?400-(d-10)*10:40
+};
+const mC={field:'#1e60cc',dry:'#f59f00',water:'#0277bd',two:'#00838f',three:'#7b40c2'};
+const mL={field:'القياس الحقلي',dry:'نموذج جاف',water:'نموذج مائي',two:'طبقتان',three:'ثلاث طبقات'};
+
+function modelDepths(){
+  if(measurements.length>0)return measurements.map(m=>m.depth);
+  let d=[];for(let i=0;i<=100;i+=5)d.push(i);return d;
+}
+function initChart(){
+  let ctx=document.getElementById('rhoChart').getContext('2d');
+  chart=new Chart(ctx,{
+    type:'line',data:{datasets:[]},
+    options:{
+      responsive:true,maintainAspectRatio:true,
+      scales:{
+        x:{type:'linear',title:{display:true,text:'العمق (م)',font:{family:'Tajawal',weight:'bold',size:11},color:'#1e3d78'}},
+        y:{type:'logarithmic',title:{display:true,text:'ρ (Ω·m)',font:{family:'Tajawal',weight:'bold',size:11},color:'#1e3d78'}}
+      },
+      plugins:{
+        legend:{labels:{font:{family:'Tajawal',size:11},padding:12}},
+        tooltip:{callbacks:{label:c=>` ρ = ${c.parsed.y.toFixed(2)} Ω·m`}}
+      }
+    }
+  });
+}
+function toggleCurve(id){
+  visibleCurves[id]=!visibleCurves[id];
+  document.querySelector(`.c-tog[data-c="${id}"]`).classList.toggle('on',visibleCurves[id]);
+  updateChartData();
+}
+function updateChartData(){
+  if(!chart)return;
+  const depths=modelDepths(),ds=[];
+  if(visibleCurves.field&&measurements.length>0){
+    const s=[...measurements].sort((a,b)=>a.depth-b.depth);
+    ds.push({label:mL.field,data:s.map(m=>({x:m.depth,y:m.rho})),
+      borderColor:mC.field,backgroundColor:'rgba(30,96,204,.07)',
+      borderWidth:3,pointRadius:6,pointBackgroundColor:mC.field,
+      pointBorderColor:'#fff',pointBorderWidth:2,fill:true,tension:.3});
+  }
+  ['dry','water','two','three'].forEach(k=>{
+    if(!visibleCurves[k])return;
+    ds.push({label:mL[k],data:depths.map(d=>({x:d,y:models[k](d)})),
+      borderColor:mC[k],borderWidth:2,borderDash:[7,4],pointRadius:0,fill:false,tension:.3});
+  });
+  chart.data.datasets=ds;chart.update();
+}
+
+/* ═══════════════════════════════════════
+   AB/2 CURVE — استيراد Excel + رسم + كشف الحوامل المائية
+═══════════════════════════════════════ */
+
+/* يبني نقاط منحنى AB/2 من مصدرين: القياسات المسجّلة يدوياً + المستوردة من Excel،
+   ثم يدمجها ويرتبها تصاعدياً حسب AB/2 (يفضّل نقطة الاستيراد عند تطابق AB/2). */
+function getCombinedAbPoints(){
+  const map = new Map(); /* key = ab2 مقرّب لتفادي التكرار الرقمي */
+  measurements.forEach(m=>{
+    const ab2 = m.ab/2;
+    map.set(+ab2.toFixed(4), {ab2, rho:m.rho, source:'field'});
+  });
+  importedAbData.forEach(p=>{
+    map.set(+p.ab2.toFixed(4), {ab2:p.ab2, rho:p.rho, source:'imported'});
+  });
+  return [...map.values()].sort((a,b)=>a.ab2-b.ab2);
+}
+
+/* ═══ أدوات مساعدة لتكييف القراءة مع أي ملف Excel ناتج عن جهاز SAS ═══ */
+
+/* تطبيع اسم العمود: إزالة المسافات الزائدة، توحيد الأقواس، إزالة الوحدات الشائعة
+   (م، m، Ω، ohm)، توحيد الحالة، لتسهيل مطابقة الأنماط بمرونة أكبر */
+function vgeoNormHeader(k){
+  return k.toString()
+    .trim().toLowerCase()
+    .replace(/[\[\](){}]/g,' ')
+    .replace(/[_\-]/g,' ')
+    .replace(/\s+/g,' ')
+    .replace(/\bohm\b|\bΩ\b|\bω\b/g,'')
+    .replace(/\bm\b/g,'')
+    .trim();
+}
+
+/* تطبيع رقم مكتوب بأي صيغة شائعة في ملفات Excel الحقلية:
+   - أرقام عربية-هندية (٠-٩) أو فارسية
+   - فاصلة عشرية أوروبية (12,5) أو فاصل آلاف (1.234,56 / 1,234.56)
+   - علامة % أو وحدات ملتصقة بالرقم
+   - علامة سالبة زائفة أو مسافات داخل الرقم */
+function vgeoParseNum(val){
+  if(val==null) return NaN;
+  if(typeof val==='number') return val;
+  let s = val.toString().trim();
+  if(!s) return NaN;
+  /* أرقام عربية-هندية/فارسية → لاتينية */
+  const arabicDigits = '٠١٢٣٤٥٦٧٨٩', persianDigits='۰۱۲۳۴۵۶۷۸۹';
+  s = s.replace(/[٠-٩]/g, d=>arabicDigits.indexOf(d))
+       .replace(/[۰-۹]/g, d=>persianDigits.indexOf(d));
+  s = s.replace(/[%\s]/g,'').replace(/[^\d.,\-+eE]/g,'');
+  if(!s) return NaN;
+  /* إن وُجدت كل من الفاصلة والنقطة، الأخيرة ظهوراً هي الفاصل العشري الحقيقي */
+  const lastComma = s.lastIndexOf(','), lastDot = s.lastIndexOf('.');
+  if(lastComma>-1 && lastDot>-1){
+    if(lastComma>lastDot) s = s.replace(/\./g,'').replace(',', '.');
+    else s = s.replace(/,/g,'');
+  } else if(lastComma>-1){
+    /* فاصلة وحدها: عشرية إن كان بعدها 1-2 رقم فقط، وإلا فاصل آلاف */
+    const decimals = s.length-lastComma-1;
+    s = (decimals<=2) ? s.replace(',', '.') : s.replace(/,/g,'');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? NaN : n;
+}
+
+/* اختيار أفضل ورقة عمل داخل الملف: أول ورقة تحتوي بيانات صفوف فعلية،
+   مع تفضيل الورقة التي يظهر بها عمود مسافة (AB) واضح إن أمكن */
+function vgeoPickBestSheet(wb){
+  const names = wb.SheetNames;
+  let best = null, bestScore = -1;
+  names.forEach(name=>{
+    const ws = wb.Sheets[name];
+    const rows = XLSX.utils.sheet_to_json(ws, {defval:null});
+    if(!rows.length) return;
+    const keys = Object.keys(rows[0]).map(vgeoNormHeader);
+    let score = rows.length;
+    if(keys.some(k=>k.includes('ab')||k.includes('oa')||k.includes('نصف'))) score += 1000;
+    if(score>bestScore){ bestScore=score; best={name, rows}; }
+  });
+  return best;
+}
+
+/* ═══ استيراد Excel ═══
+   يتكيّف مع أي ملف Excel/CSV صادر عن جهاز SAS 300 بغض النظر عن ترتيب
+   الأعمدة أو تسمياتها الدقيقة، ويدعم صيغتين حسب الأعمدة المكتشفة:
+   1) AB/2 أو AB أو OA (المسافة الكاملة بين الأقطاب) + ρ أو Ra (المقاومة الحقيقية) جاهزة
+   2) AB/2 أو AB أو OA + R (المقاومة المقاسة) [+ MN اختياري] → يُحسب K من جدول المعايرة ثم Ra = R×K
+   أسماء الأعمدة المقبولة (غير حساسة لحالة الأحرف / المسافات / الوحدات، وتدعم العربية):
+   AB/2, AB2, AB, OA, نصف AB, R, DV/I, المقاومة المقاسة, rho, ρ, Ra, المقاومة الحقيقية, MN, K */
+function importAbExcel(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:false});
+      if(!wb.SheetNames.length){ showAbImportNote('⚠️ لم يتم العثور على أي ورقة عمل في الملف.', true); evt.target.value=''; return; }
+
+      const picked = vgeoPickBestSheet(wb);
+      if(!picked){ showAbImportNote('⚠️ الملف فارغ أو لا يحتوي بيانات قابلة للقراءة في أي ورقة عمل.', true); evt.target.value=''; return; }
+      const rows = picked.rows;
+
+      /* اكتشاف أسماء الأعمدة الفعلية بمرونة، بعد تطبيع كل اسم */
+      const sample = rows[0];
+      const rawKeys = Object.keys(sample);
+      const normMap = new Map(rawKeys.map(k=>[k, vgeoNormHeader(k)]));
+      const findKey = (patterns) => rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return patterns.some(p=>kk===p || kk.includes(p));
+      });
+
+      /* عمود المسافة: AB/2 أو AB أو OA (بعض أجهزة SAS تُسمّي المسافة الكاملة OA) */
+      const abKey  = findKey(['ab/2','ab2','a b/2','نصف ab','نصف المسافة','oa','ab','a-b','مسافة الأقطاب']);
+      /* عمود المقاومة الحقيقية الجاهزة: يشمل Ra (تسمية شائعة في جداول SAS300) */
+      const rhoKey = rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return kk==='ra' || kk==='rho' || kk==='ρ' || kk==='pa' || kk.includes('المقاومة الحقيقية') || kk.includes('المقاومة النوعية') || kk.includes('true resistivity') || kk.includes('apparent resistivity') || (kk.includes('resistivity') && !kk.includes('measured'));
+      });
+      /* rKey: تطابق تام لحرف R لوحده أو DV/I (المقاومة المقاسة الخام)، لتفادي التطابق الخاطئ مع Ra/rho/resistivity */
+      const rKey   = rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return kk==='r' || kk==='r ohm' || kk==='dv/i' || kk==='dv i' || kk.includes('المقاومة المقاسة') || kk.includes('measured');
+      });
+      const mnKey  = findKey(['mn','m n']);
+      const kKey   = rawKeys.find(k=>normMap.get(k)==='k');
+
+      if(!abKey){
+        showAbImportNote(`❌ لم يتم العثور على عمود المسافة (AB/2 أو AB أو OA) في الملف${wb.SheetNames.length>1?` (ورقة "${picked.name}")`:''}. تأكد من تسمية العمود بوضوح، مثل: AB/2 أو AB أو OA.`, true);
+        evt.target.value=''; return;
+      }
+      if(!rhoKey && !rKey){
+        showAbImportNote('❌ يجب أن يحتوي الملف إما عمود Ra/ρ (المقاومة الحقيقية) جاهزاً، أو عمود R/DV-I (المقاومة المقاسة) لحساب Ra.', true);
+        evt.target.value=''; return;
+      }
+
+      const parsed = [];
+      let skipped = 0;
+      rows.forEach(row=>{
+        let abRaw = vgeoParseNum(row[abKey]);
+        if(isNaN(abRaw) || abRaw<=0){ skipped++; return; }
+        /* إن كان العمود المكتشف هو AB/2 (نصف المسافة) لا نقسمه، أما OA أو AB (المسافة الكاملة) فنقسمها /2 */
+        const abKeyNorm = normMap.get(abKey);
+        const isHalfAlready = abKeyNorm.includes('ab/2') || abKeyNorm.includes('ab2') || abKeyNorm.includes('نصف');
+        const ab2 = isHalfAlready ? abRaw : abRaw/2;
+
+        let rho = null;
+        if(rhoKey && row[rhoKey]!=null && row[rhoKey]!==''){
+          rho = vgeoParseNum(row[rhoKey]);
+        } else if(rKey && row[rKey]!=null && row[rKey]!==''){
+          const R = vgeoParseNum(row[rKey]);
+          let K = kKey ? vgeoParseNum(row[kKey]) : NaN;
+          if(isNaN(K)||!K){
+            /* حساب K من جدول المعايرة بناءً على AB الكامل وMN إن توفّر، أو أقرب AB */
+            const abFull = ab2*2;
+            const mnVal = mnKey ? vgeoParseNum(row[mnKey]) : NaN;
+            let cal = calibrationData.find(d=>Math.abs(d.ab-abFull)<0.01 && (isNaN(mnVal) || Math.abs(d.mn-mnVal)<0.01));
+            if(!cal){
+              /* أقرب AB متاح في الجدول */
+              cal = [...calibrationData].sort((a,b)=>Math.abs(a.ab-abFull)-Math.abs(b.ab-abFull))[0];
+            }
+            K = cal ? cal.k : null;
+          }
+          if(K && !isNaN(R)) rho = R*K;
+        }
+        if(rho==null || isNaN(rho) || rho<=0){ skipped++; return; }
+        parsed.push({ab2, rho});
+      });
+
+      if(!parsed.length){
+        showAbImportNote('❌ لم يتم استخراج أي نقطة صالحة من الملف. تحقّق من أن أعمدة المسافة والمقاومة تحتوي أرقاماً صحيحة.', true);
+        evt.target.value=''; return;
+      }
+
+      /* دمج الصفوف التي تتشارك نفس AB/2 (يحدث أحياناً عند تكرار قياس) بأخذ المتوسط */
+      const dedupMap = new Map();
+      parsed.forEach(p=>{
+        const key = +p.ab2.toFixed(4);
+        if(dedupMap.has(key)){
+          const ex = dedupMap.get(key);
+          ex.rho = (ex.rho*ex._n + p.rho)/(ex._n+1); ex._n++;
+        } else dedupMap.set(key, {...p, _n:1});
+      });
+
+      importedAbData = [...dedupMap.values()].map(p=>({ab2:p.ab2, rho:p.rho})).sort((a,b)=>a.ab2-b.ab2);
+      manualVgeoBounds = []; /* بيانات جديدة → أعد التقسيم الافتراضي بدل حدود قديمة لم تعد مطابقة */
+      updateAbChart();
+      updateAquiferBreaks();
+      updateVerticalGeoSection();
+      const sheetNote = wb.SheetNames.length>1 ? ` · ورقة العمل: "${picked.name}"` : '';
+      showAbImportNote(`✅ تم استيراد ${importedAbData.length} نقطة بنجاح${skipped?` (تم تجاهل ${skipped} صف غير صالح)`:''}${sheetNote}. عمود المسافة: "${abKey}" · عمود المقاومة: "${rhoKey || rKey}"${rhoKey?' (جاهزة)':' (محسوبة R×K)'}.`, false);
+      saveLS();
+    }catch(err){
+      showAbImportNote('❌ تعذّرت قراءة الملف: '+err.message, true);
+    }
+    evt.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showAbImportNote(msg, isError){
+  const el = document.getElementById('abImportNote');
+  el.style.display = 'block';
+  el.style.background = isError ? '#ffebee' : '#e8f5e9';
+  el.style.borderColor = isError ? '#ffcdd2' : '#a5d6a7';
+  el.style.color = isError ? '#b71c1c' : '#1b5e20';
+  el.textContent = msg;
+}
+
+function showMeasImportNote(msg, isError){
+  const el = document.getElementById('measImportNote');
+  el.style.display = 'block';
+  el.style.background = isError ? '#ffebee' : '#e8f5e9';
+  el.style.borderColor = isError ? '#ffcdd2' : '#a5d6a7';
+  el.style.color = isError ? '#b71c1c' : '#1b5e20';
+  el.textContent = msg;
+}
+
+/* ═══ استيراد Excel مباشرة إلى سجل القياسات الفعلي (measurements) ═══
+   بخلاف استيراد منحنى AB/2 (الذي يضيف نقاطاً للعرض البياني فقط)، هذا الاستيراد
+   يملأ صفوف السجل الكاملة (AB, MN, K, R, ρ, العمق, نوع الصخر, الوقت) بحيث تظهر
+   في جدول "سجل القياسات"، التقارير، والتصدير، تماماً كما لو أُدخلت يدوياً.
+   يتكيّف مع أي ملف Excel/CSV بنفس منطق اكتشاف الأعمدة المرن المستخدم أعلاه،
+   ويدعم أيضاً عموداً اختيارياً لنوع الصخر (rock/صخر/lithology). القياسات
+   المستوردة تُضاف (دمج) فوق القياسات الموجودة سلفاً في السجل دون استبدالها. */
+function importMeasurementsExcel(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:false});
+      if(!wb.SheetNames.length){ showMeasImportNote('⚠️ لم يتم العثور على أي ورقة عمل في الملف.', true); evt.target.value=''; return; }
+
+      const picked = vgeoPickBestSheet(wb);
+      if(!picked){ showMeasImportNote('⚠️ الملف فارغ أو لا يحتوي بيانات قابلة للقراءة في أي ورقة عمل.', true); evt.target.value=''; return; }
+      const rows = picked.rows;
+
+      const sample = rows[0];
+      const rawKeys = Object.keys(sample);
+      const normMap = new Map(rawKeys.map(k=>[k, vgeoNormHeader(k)]));
+      const findKey = (patterns) => rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return patterns.some(p=>kk===p || kk.includes(p));
+      });
+
+      const abKey  = findKey(['ab/2','ab2','a b/2','نصف ab','نصف المسافة','oa','ab','a-b','مسافة الأقطاب']);
+      const rhoKey = rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return kk==='ra' || kk==='rho' || kk==='ρ' || kk==='pa' || kk.includes('المقاومة الحقيقية') || kk.includes('المقاومة النوعية') || kk.includes('true resistivity') || kk.includes('apparent resistivity') || (kk.includes('resistivity') && !kk.includes('measured'));
+      });
+      const rKey   = rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return kk==='r' || kk==='r ohm' || kk==='dv/i' || kk==='dv i' || kk.includes('المقاومة المقاسة') || kk.includes('measured');
+      });
+      const mnKey  = findKey(['mn','m n']);
+      const kKey   = rawKeys.find(k=>normMap.get(k)==='k');
+      const rockKey = rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return kk==='rock'||kk==='lithology'||kk.includes('صخر')||kk.includes('ليثولوجي');
+      });
+      const timeKey = rawKeys.find(k=>{
+        const kk = normMap.get(k);
+        return kk==='time'||kk==='وقت'||kk.includes('التوقيت');
+      });
+
+      if(!abKey){
+        showMeasImportNote(`❌ لم يتم العثور على عمود المسافة (AB/2 أو AB أو OA) في الملف${wb.SheetNames.length>1?` (ورقة "${picked.name}")`:''}. تأكد من تسمية العمود بوضوح، مثل: AB/2 أو AB أو OA.`, true);
+        evt.target.value=''; return;
+      }
+      if(!rhoKey && !rKey){
+        showMeasImportNote('❌ يجب أن يحتوي الملف إما عمود Ra/ρ (المقاومة الحقيقية) جاهزاً، أو عمود R/DV-I (المقاومة المقاسة) لحساب Ra.', true);
+        evt.target.value=''; return;
+      }
+
+      const rockMap = {
+        'كلس':'🪨 كلسية','كلسي':'🪨 كلسية','limestone':'🪨 كلسية',
+        'بازلت':'🌋 بازلتية','basalt':'🌋 بازلتية',
+        'رمل':'🏖 رملية','sand':'🏖 رملية','sandy':'🏖 رملية',
+        'مختلط':'📦 مختلطة','mixed':'📦 مختلطة'
+      };
+      const defaultRock = rockSel.options[rockSel.selectedIndex].text;
+
+      const newMeas = [];
+      let skipped = 0;
+      rows.forEach(row=>{
+        const abFull = vgeoParseNum(row[abKey]);
+        if(isNaN(abFull) || abFull<=0){ skipped++; return; }
+        const abKeyNorm = normMap.get(abKey);
+        const isHalfAlready = abKeyNorm.includes('ab/2') || abKeyNorm.includes('ab2') || abKeyNorm.includes('نصف');
+        const abFullMeters = isHalfAlready ? abFull*2 : abFull; /* السجل يخزّن AB الكامل دائماً */
+
+        let mnVal = mnKey ? vgeoParseNum(row[mnKey]) : NaN;
+        /* أقرب زوج (AB, MN) في جدول المعايرة لاستنتاج MN وK الحقيقيين إن لم يتوفرا */
+        let cal = calibrationData.find(d=>Math.abs(d.ab-abFullMeters)<0.01 && (isNaN(mnVal) || Math.abs(d.mn-mnVal)<0.01));
+        if(!cal) cal = [...calibrationData].sort((a,b)=>Math.abs(a.ab-abFullMeters)-Math.abs(b.ab-abFullMeters))[0];
+        const abFinal = cal.ab, mnFinal = isNaN(mnVal) ? cal.mn : mnVal;
+
+        let rho=null, R=null, K=null;
+        if(rhoKey && row[rhoKey]!=null && row[rhoKey]!==''){
+          rho = vgeoParseNum(row[rhoKey]);
+          K = kKey ? vgeoParseNum(row[kKey]) : cal.k;
+          if(isNaN(K)||!K) K = cal.k;
+          R = (rho && K) ? rho/K : null;
+        } else if(rKey && row[rKey]!=null && row[rKey]!==''){
+          R = vgeoParseNum(row[rKey]);
+          K = kKey ? vgeoParseNum(row[kKey]) : NaN;
+          if(isNaN(K)||!K) K = cal.k;
+          if(K && !isNaN(R)) rho = R*K;
+        }
+        if(rho==null || isNaN(rho) || rho<=0 || R==null || isNaN(R)){ skipped++; return; }
+
+        const depth = abFinal/3;
+        let rock = defaultRock;
+        if(rockKey && row[rockKey]!=null && row[rockKey]!==''){
+          const rk = row[rockKey].toString().trim().toLowerCase();
+          const matchKey = Object.keys(rockMap).find(p=>rk.includes(p));
+          if(matchKey) rock = rockMap[matchKey];
+        }
+        const timeStr = (timeKey && row[timeKey]!=null && row[timeKey]!=='') ? row[timeKey].toString() : '—';
+
+        newMeas.push({ab:abFinal, mn:mnFinal, k:K, measured:R, rho, depth, rock, time:timeStr});
+      });
+
+      if(!newMeas.length){
+        showMeasImportNote('❌ لم يتم استخراج أي قياس صالح من الملف. تحقّق من أعمدة المسافة والمقاومة.', true);
+        evt.target.value=''; return;
+      }
+
+      /* دمج فوق السجل الموجود دون استبداله (تفادي التكرار التام لنفس AB) */
+      newMeas.forEach(m=>{
+        const dup = measurements.find(ex=>Math.abs(ex.ab-m.ab)<0.01 && Math.abs(ex.depth-m.depth)<0.01);
+        if(!dup) measurements.push(m);
+      });
+      measurements.sort((a,b)=>a.depth-b.depth);
+
+      updateTable();updateStats();updateChartData();updateGeoSection();
+      
+      updateAbChart();updateAquiferBreaks();updateVerticalGeoSection();
+
+      const sheetNote = wb.SheetNames.length>1 ? ` · ورقة العمل: "${picked.name}"` : '';
+      showMeasImportNote(`✅ تم استيراد ${newMeas.length} قياس وإضافتها لسجل القياسات${skipped?` (تم تجاهل ${skipped} صف غير صالح)`:''}${sheetNote}. عمود المسافة: "${abKey}" · عمود المقاومة: "${rhoKey || rKey}"${rhoKey?' (جاهزة)':' (محسوبة R×K)'}.`, false);
+      saveLS();
+    }catch(err){
+      showMeasImportNote('❌ تعذّرت قراءة الملف: '+err.message, true);
+    }
+    evt.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function clearAbImport(){
+  if(importedAbData.length && !confirm('مسح جميع البيانات المستوردة من Excel؟')) return;
+  importedAbData = [];
+  manualVgeoBounds = []; /* حدود التقسيم القديمة لم تعد ذات معنى بعد تغيّر مصدر البيانات */
+  document.getElementById('abImportNote').style.display='none';
+  updateAbChart();
+  updateAquiferBreaks();
+  updateVerticalGeoSection();
+  saveLS();
+}
+
+function setAbScale(mode){
+  abScaleMode = mode;
+  document.getElementById('abScaleLogBtn').classList.toggle('on', mode==='log');
+  document.getElementById('abScaleLinBtn').classList.toggle('on', mode==='lin');
+  updateAbChart();
+}
+
+/* ═══ حالة وضع "التقسيم على المنحني" (Split على أسلوب IPI2Win) ═══
+   تُستخدم نفس مصفوفة manualVgeoBounds (أعماق) كمصدر وحيد للحقيقة، ويتم تحويلها
+   هنا من/إلى AB/2 (عمق = AB/3 → AB/2 = عمق × 1.5) بحيث يبقى منحنى AB/2،
+   المقطع الرأسي، وجدول الطبقات متزامنين دوماً من نفس الحدود. */
+let abSplitMode = false;
+let _abDragBoundIdx = -1;
+let _abLongPressTimer = null;
+
+/* تحويل عمق (نتيجة AB/3) إلى AB/2 المكافئ */
+function depthToAb2(depth){ return depth*1.5; }
+function ab2ToDepth(ab2){ return ab2*2/3; }
+
+/* Chart.js custom plugin: يرسم خطوط split العمودية + خطوط الميل المستقيمة لكل قطعة */
+const abSplitPlugin = {
+  id:'abSplitPlugin',
+  afterDatasetsDraw(chart){
+    if(chart.canvas.id !== 'abChart') return;
+    const {ctx, chartArea, scales} = chart;
+    if(!chartArea) return;
+    const pts = getCombinedAbPoints();
+    if(pts.length<2) return;
+
+    /* خطوط split العمودية (من manualVgeoBounds محوّلة إلى AB/2) */
+    if(manualVgeoBounds.length){
+      ctx.save();
+      manualVgeoBounds.forEach(depth=>{
+        const ab2 = depthToAb2(depth);
+        const x = scales.x.getPixelForValue(ab2);
+        if(x<chartArea.left || x>chartArea.right) return;
+        ctx.strokeStyle = abSplitMode ? '#00bcd4' : 'rgba(0,188,212,.55)';
+        ctx.lineWidth = abSplitMode ? 2.5 : 1.5;
+        ctx.setLineDash([5,4]);
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        if(abSplitMode){
+          ctx.setLineDash([]);
+          ctx.fillStyle='#00838f';
+          ctx.beginPath(); ctx.arc(x, chartArea.top+8, 5, 0, Math.PI*2); ctx.fill();
+        }
+      });
+      ctx.restore();
+    }
+
+    /* خطوط الميل المستقيمة (fit line) لكل قطعة — بأسلوب IPI2Win */
+    const segs = computeAbSegments(pts);
+    if(segs.length>1){
+      ctx.save();
+      segs.forEach((seg,i)=>{
+        if(seg.pts.length<2) return;
+        ctx.strokeStyle = i%2===0 ? '#e03131' : '#7b40c2';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        seg.fitLine.forEach((p,j)=>{
+          const x = scales.x.getPixelForValue(p.x);
+          const y = scales.y.getPixelForValue(p.y);
+          if(j===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        });
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+  }
+};
+Chart.register(abSplitPlugin);
+
+/* يقسّم نقاط المنحني (pts) إلى قطع (segments) حسب manualVgeoBounds، ويحسب
+   لكل قطعة الميل اللوغاريتمي (Δlogρ/ΔlogAB) عبر انحدار خطي بسيط (least squares)
+   على المحورين log-log، تماماً كما تُعرض القطع المستقيمة في IPI2Win. */
+function computeAbSegments(pts){
+  if(!pts.length) return [];
+  if(!manualVgeoBounds.length){
+    return [{ pts, fitLine: fitLogLogLine(pts), label:'قطعة واحدة (بلا تقسيم)' }];
+  }
+  const boundsAb2 = [...manualVgeoBounds].map(depthToAb2).sort((a,b)=>a-b);
+  const edges = [0, ...boundsAb2, Infinity];
+  const segs = [];
+  for(let i=0;i<edges.length-1;i++){
+    const lo=edges[i], hi=edges[i+1];
+    const segPts = pts.filter(p=> p.ab2>=lo && p.ab2<=hi);
+    if(segPts.length<1) continue;
+    segs.push({ pts:segPts, fitLine: fitLogLogLine(segPts) });
+  }
+  return segs;
+}
+
+/* انحدار خطي بسيط (least squares) في فضاء log-log لنقاط قطعة واحدة،
+   يُعيد نقطتي نهاية الخط المستقيم المناسب (للرسم) + قيمة الميل والمتوسط. */
+function fitLogLogLine(segPts){
+  if(segPts.length<2){
+    const p = segPts[0];
+    return p ? [{x:p.ab2,y:p.rho},{x:p.ab2,y:p.rho}] : [];
+  }
+  const xs = segPts.map(p=>Math.log10(p.ab2));
+  const ys = segPts.map(p=>Math.log10(p.rho));
+  const n = xs.length;
+  const sumX = xs.reduce((a,b)=>a+b,0), sumY = ys.reduce((a,b)=>a+b,0);
+  const sumXY = xs.reduce((a,x,i)=>a+x*ys[i],0);
+  const sumXX = xs.reduce((a,x)=>a+x*x,0);
+  const denom = (n*sumXX - sumX*sumX) || 1e-9;
+  const slope = (n*sumXY - sumX*sumY)/denom;
+  const intercept = (sumY - slope*sumX)/n;
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = slope*x0+intercept, y1 = slope*x1+intercept;
+  return [
+    {x:Math.pow(10,x0), y:Math.pow(10,y0)},
+    {x:Math.pow(10,x1), y:Math.pow(10,y1)}
+  ];
+}
+
+/* ═══ تصنيف نوع المنحنى الكهربائي (تصنيف حقيقي متعدد الطبقات) ═══
+   المبدأ العلمي المعتمد في VES: نوع المنحنى لا يُحدَّد من 3 نقاط بيانات خام
+   (حساسة للتشويش)، بل من تتابع اتجاه الميل بين القطع المستقيمة المتتالية
+   في فضاء log-log (نفس القطع segments المستخدمة أصلاً في التقسيم اليدوي/التلقائي):
+   - ميل موجب متبوع بسالب  → K (طبقة عالية المقاومة بين طبقتين أقل)
+   - ميل سالب متبوع بموجب  → H (طبقة موصلة/مائية محتملة بين طبقتين أعلى)
+   - ميل موجب باستمرار     → A (تصاعدي)
+   - ميل سالب باستمرار     → Q (تنازلي)
+   ولأكثر من طبقتين تُبنى تسلسلات مركّبة (KH, HK, QH, KQ...) بربط الرمزين
+   الأساسيين لكل زوج قطع متتاليتين، كما هو معتمد في تفسير VES الكلاسيكي. */
+function classifyResistivityCurve(pts){
+  if(!pts || pts.length<4) return {code:'—', label:'—', segments:[], reliable:false};
+
+  /* نستخدم القطع الحالية إن وُجد تقسيم يدوي، وإلا تقسيماً تلقائياً مبنياً على
+     انعطافات المنحني الفعلية (نفس منطق autoVgeoBounds) بدل 3 نقاط خام فقط */
+  let segs;
+  if(manualVgeoBounds && manualVgeoBounds.length){
+    segs = computeAbSegments(pts);
+  } else {
+    const bounds = computeAutoVgeoBounds(pts).slice(1,-1);
+    const boundsAb2 = bounds.map(depthToAb2).sort((a,b)=>a-b);
+    const edges = [0, ...boundsAb2, Infinity];
+    segs = [];
+    for(let i=0;i<edges.length-1;i++){
+      const lo=edges[i], hi=edges[i+1];
+      const segPts = pts.filter(p=> p.ab2>=lo && p.ab2<=hi);
+      if(segPts.length<1) continue;
+      segs.push({ pts:segPts, fitLine: fitLogLogLine(segPts) });
+    }
+  }
+  /* الميل الفعلي لكل قطعة من خط الانحدار log-log (fitLine) */
+  const slopes = segs.map(s=>{
+    const [a,b] = s.fitLine.length===2 ? s.fitLine : [s.fitLine[0],s.fitLine[0]];
+    if(!a||!b||a.x<=0||b.x<=0||a.y<=0||b.y<=0) return 0;
+    const dx = Math.log10(b.x)-Math.log10(a.x);
+    if(Math.abs(dx)<1e-9) return 0;
+    return (Math.log10(b.y)-Math.log10(a.y))/dx;
+  }).filter((_,i)=>segs[i].pts.length>=1);
+
+  if(slopes.length<1) return {code:'—', label:'—', segments:segs, reliable:false};
+  if(slopes.length===1){
+    const s=slopes[0];
+    const code = s>0.05?'A':(s<-0.05?'Q':'—');
+    const label = s>0.05?'A — تصاعدي (طبقة واحدة مهيمنة، تزداد المقاومية)':
+                  s<-0.05?'Q — تنازلي (طبقة واحدة مهيمنة، تنقص المقاومية)':
+                  'منحنى شبه أفقي — تجانس نسبي';
+    return {code, label, segments:segs, reliable:pts.length>=4};
+  }
+
+  /* تحويل كل زوج قطع متتالية إلى حرف (K أو H أو استمرار A/Q) وبناء الكود الكامل */
+  const SIGN_EPS = 0.05; /* عتبة دنيا لاعتبار الميل "فعلياً" موجباً/سالباً وليس ضوضاء */
+  const dirs = slopes.map(s=> s>SIGN_EPS?'+' : (s<-SIGN_EPS?'-':'0'));
+  let code='';
+  for(let i=0;i<dirs.length-1;i++){
+    const d1=dirs[i], d2=dirs[i+1];
+    if(d1==='+'&&d2==='-') code+='K';
+    else if(d1==='-'&&d2==='+') code+='H';
+    else if(d1==='+'&&d2==='+') code+= (code.slice(-1)==='A'?'':'A');
+    else if(d1==='-'&&d2==='-') code+= (code.slice(-1)==='Q'?'':'Q');
+    /* d بها '0' (شبه أفقي) تُهمَل من الكود لكنها لا تُسقط بقية التسلسل */
+  }
+  if(!code){
+    /* حالة نادرة: تذبذبات بلا اتجاه واضح */
+    code = dirs.filter(d=>d!=='0').join('')||'—';
+  }
+
+  const labels = {
+    K:'K — طبقة عالية المقاومة محصورة بين طبقتين أقل (شائع فوق الصخر الصلب الجاف)',
+    H:'H — طبقة موصلة/مائية محتملة محصورة بين طبقتين أعلى مقاومة',
+    A:'A — تصاعدي مستمر (المقاومية تزداد بثبات مع العمق)',
+    Q:'Q — تنازلي مستمر (المقاومية تنقص بثبات مع العمق)',
+    KH:'KH — طبقة عالية المقاومة ثم طبقة موصلة أسفلها (مؤشر جيد لحامل مائي عميق)',
+    HK:'HK — طبقة موصلة ثم طبقة عالية المقاومة أسفلها',
+    KQ:'KQ — طبقة عالية المقاومة ثم تناقص مستمر',
+    QH:'QH — تناقص ثم طبقة موصلة (مائية محتملة) في العمق',
+    HA:'HA — طبقة موصلة ثم تصاعد مستمر',
+    AK:'AK — تصاعد ثم طبقة عالية المقاومة'
+  };
+  const label = labels[code] || (code+' — نمط مركّب متعدد الطبقات، راجع جدول القطع للتفاصيل');
+  return {code, label, segments:segs, reliable: pts.length>=5 && segs.length>=2};
+}
+
+function toggleAbSplitMode(){
+  abSplitMode = !abSplitMode;
+  document.getElementById('abSplitBtn').classList.toggle('on', abSplitMode);
+  document.getElementById('abSplitHint').classList.toggle('show', abSplitMode);
+  document.getElementById('abChart').classList.toggle('edit-mode', abSplitMode);
+  updateAbChart();
+}
+
+/* عتبة القرب (بالبكسل) لاعتبار الضغط على خط split قائم */
+const AB_SPLIT_HIT_PX = 10;
+
+function abClickToAb2(evt, chart){
+  const rect = chart.canvas.getBoundingClientRect();
+  const x = evt.clientX - rect.left;
+  return chart.scales.x.getValueForPixel(x);
+}
+
+function abNearestBoundIdx(evt, chart){
+  const rect = chart.canvas.getBoundingClientRect();
+  const xPx = evt.clientX - rect.left;
+  let nearIdx=-1, nearDist=Infinity;
+  manualVgeoBounds.forEach((depth,i)=>{
+    const px = chart.scales.x.getPixelForValue(depthToAb2(depth));
+    const d = Math.abs(px-xPx);
+    if(d<nearDist){ nearDist=d; nearIdx=i; }
+  });
+  return nearDist<=AB_SPLIT_HIT_PX ? nearIdx : -1;
+}
+
+function abChartMouseDown(evt){
+  if(!abSplitMode || !abChart) return;
+  const idx = abNearestBoundIdx(evt, abChart);
+  if(idx>=0){ _abDragBoundIdx = idx; return; }
+  /* لا يوجد خط قريب → أضف split جديداً عند نقطة الضغط */
+  const ab2 = abClickToAb2(evt, abChart);
+  if(!ab2 || ab2<=0) return;
+  const depth = ab2ToDepth(ab2);
+  const pts = getCombinedAbPoints();
+  if(pts.length<2) return;
+  const maxDepth = pts[pts.length-1].depth*1.15;
+  if(depth<=0 || depth>=maxDepth) return;
+  manualVgeoBounds.push(depth);
+  updateAbChart();
+  updateVerticalGeoSection();
+  saveLS();
+}
+
+function abChartMouseMove(evt){
+  if(!abSplitMode || !abChart || _abDragBoundIdx<0) return;
+  const ab2 = abClickToAb2(evt, abChart);
+  if(!ab2 || ab2<=0) return;
+  const depth = ab2ToDepth(ab2);
+  const pts = getCombinedAbPoints();
+  const maxDepth = pts.length ? pts[pts.length-1].depth*1.15 : depth+1;
+  const minGap = Math.max(0.05, maxDepth*0.01);
+  const sorted = [...manualVgeoBounds].sort((a,b)=>a-b);
+  const curVal = manualVgeoBounds[_abDragBoundIdx];
+  const posInSorted = sorted.indexOf(curVal);
+  const lower = posInSorted>0 ? sorted[posInSorted-1]+minGap : minGap;
+  const upper = posInSorted<sorted.length-1 ? sorted[posInSorted+1]-minGap : maxDepth-minGap;
+  manualVgeoBounds[_abDragBoundIdx] = Math.max(lower, Math.min(upper, depth));
+  updateAbChart();
+  updateVerticalGeoSection();
+}
+
+function abChartMouseUp(){
+  if(_abDragBoundIdx>=0){ _abDragBoundIdx=-1; saveLS(); }
+}
+
+function abChartDblClick(evt){
+  if(!abSplitMode || !abChart) return;
+  const idx = abNearestBoundIdx(evt, abChart);
+  if(idx>=0){
+    manualVgeoBounds.splice(idx,1);
+    updateAbChart();
+    updateVerticalGeoSection();
+    saveLS();
+  }
+}
+
+/* لمس (موبايل): بدء لمس → سحب إن قريب من خط، أو ضغط مطوّل لحذفه، وإلا إضافة split عند الرفع */
+function abChartTouchStart(evt){
+  if(!abSplitMode || !abChart) return;
+  const touch = evt.touches[0];
+  const idx = abNearestBoundIdx(touch, abChart);
+  clearTimeout(_abLongPressTimer);
+  if(idx>=0){
+    _abDragBoundIdx = idx;
+    _abLongPressTimer = setTimeout(()=>{
+      if(_abDragBoundIdx===idx){
+        manualVgeoBounds.splice(idx,1);
+        _abDragBoundIdx=-1;
+        updateAbChart();
+        updateVerticalGeoSection();
+        saveLS();
+      }
+    }, 550);
+  } else {
+    evt.preventDefault();
+    abChartMouseDown(touch);
+  }
+}
+function abChartTouchMove(evt){
+  if(!abSplitMode || _abDragBoundIdx<0) return;
+  clearTimeout(_abLongPressTimer);
+  evt.preventDefault();
+  abChartMouseMove(evt.touches[0]);
+}
+function abChartTouchEnd(){
+  clearTimeout(_abLongPressTimer);
+  abChartMouseUp();
+}
+
+/* يملأ جدول القطع (segments) أسفل منحنى AB/2 */
+function updateAbSegTable(){
+  const wrap = document.getElementById('abSegTblWrap');
+  const tbody = document.getElementById('abSegTbody');
+  if(!wrap || !tbody) return;
+  const pts = getCombinedAbPoints();
+  if(!manualVgeoBounds.length || pts.length<2){
+    wrap.classList.remove('show');
+    return;
+  }
+  const segs = computeAbSegments(pts);
+  if(segs.length<2){ wrap.classList.remove('show'); return; }
+  wrap.classList.add('show');
+  tbody.innerHTML = segs.map((seg,i)=>{
+    const abFrom = Math.min(...seg.pts.map(p=>p.ab2)).toFixed(1);
+    const abTo = Math.max(...seg.pts.map(p=>p.ab2)).toFixed(1);
+    const line = seg.fitLine;
+    let slope = 0;
+    if(line.length===2 && line[1].x!==line[0].x){
+      slope = (Math.log10(line[1].y)-Math.log10(line[0].y)) / (Math.log10(line[1].x)-Math.log10(line[0].x));
+    }
+    const avgRho = seg.pts.reduce((a,p)=>a+Math.log10(p.rho),0)/seg.pts.length;
+    const avgRhoVal = Math.pow(10, avgRho);
+    let pattern = 'مستقر';
+    if(slope>0.15) pattern='↗ تصاعدي (مقاومية تزداد)';
+    else if(slope<-0.15) pattern='↘ تنازلي (مقاومية تنخفض — مؤشر مائي محتمل)';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${abFrom} → ${abTo}</td>
+      <td>${slope.toFixed(2)}</td>
+      <td>${avgRhoVal.toFixed(1)} Ω·m</td>
+      <td style="font-size:.56rem;">${pattern}</td>
+    </tr>`;
+  }).join('');
+}
+
+function initAbChart(){
+  const ctx = document.getElementById('abChart').getContext('2d');
+  abChart = new Chart(ctx,{
+    type:'line',
+    data:{datasets:[]},
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{type:'logarithmic', title:{display:true, text:'AB/2 (م)', font:{family:'Tajawal',weight:'bold',size:11}, color:'#1e3d78'}},
+        y:{type:'logarithmic', title:{display:true, text:'ρ الحقيقية (Ω·m)', font:{family:'Tajawal',weight:'bold',size:11}, color:'#1e3d78'}}
+      },
+      plugins:{
+        legend:{labels:{font:{family:'Tajawal',size:11},padding:12}},
+        tooltip:{
+          enabled:true,
+          filter:()=>!abSplitMode, /* عطّل التلميحات أثناء وضع التقسيم لتفادي التعارض مع النقر */
+          callbacks:{label:c=>` AB/2=${c.parsed.x} م · ρ=${c.parsed.y.toFixed(2)} Ω·m`}
+        }
+      }
+    }
+  });
+
+  /* ربط أحداث الماوس/اللمس لوضع "التقسيم على المنحني" مباشرة على عنصر canvas */
+  const canvas = document.getElementById('abChart');
+  canvas.addEventListener('mousedown', abChartMouseDown);
+  canvas.addEventListener('mousemove', abChartMouseMove);
+  canvas.addEventListener('mouseup', abChartMouseUp);
+  canvas.addEventListener('mouseleave', abChartMouseUp);
+  canvas.addEventListener('dblclick', abChartDblClick);
+  canvas.addEventListener('touchstart', abChartTouchStart, {passive:false});
+  canvas.addEventListener('touchmove', abChartTouchMove, {passive:false});
+  canvas.addEventListener('touchend', abChartTouchEnd);
+}
+
+function updateAbChart(){
+  if(!abChart) return;
+  abChart.options.scales.x.type = (abScaleMode==='log') ? 'logarithmic' : 'linear';
+
+  const pts = getCombinedAbPoints();
+  const ds = [];
+  if(pts.length){
+    ds.push({
+      label:'منحنى AB/2 (مدمج)',
+      data: pts.map(p=>({x:p.ab2, y:p.rho})),
+      borderColor:'#1148a8', backgroundColor:'rgba(17,72,168,.06)',
+      borderWidth:3, pointRadius: pts.map(p=>p.source==='imported'?4:6),
+      pointBackgroundColor: pts.map(p=>p.source==='imported'?'#7b40c2':'#1148a8'),
+      pointBorderColor:'#fff', pointBorderWidth:2, fill:false, tension:0
+    });
+
+    /* تمييز نقاط الحوامل المائية المكتشفة (إن وُجدت) بلون مختلف */
+    const breaks = detectAquiferBreaks(pts);
+    if(breaks.length){
+      ds.push({
+        label:'💧 نقاط انخفاض محتملة',
+        data: breaks.map(b=>({x:b.p2.ab2, y:b.p2.rho})),
+        showLine:false,
+        pointStyle:'triangle',
+        pointRadius:9, pointBackgroundColor:'#00bcd4',
+        pointBorderColor:'#006064', pointBorderWidth:2
+      });
+    }
+  }
+  abChart.data.datasets = ds;
+  abChart.update();
+  updateAbSegTable();
+  const abResetBtn = document.getElementById('abSplitResetBtn');
+  if(abResetBtn) abResetBtn.style.opacity = manualVgeoBounds.length ? '1' : '.45';
+}
+
+/* ═══ خوارزمية كشف الحوامل المائية (نسخة محسّنة) ═══
+   تجمع بين مصدرين للأدلة بدل الاعتماد على انحدار زوج نقاط متتالٍ فقط:
+
+   1) "انحدار حاد" (drop edges) — كما في السابق: انحدار سالب واضح بين
+      نقطتين متتاليتين، لكن معامل القوة الآن يأخذ أيضاً مدى اتساق الاتجاه
+      السالب في الجوار (النقاط المحيطة) لتقليل الإيجابيات الكاذبة الناتجة
+      عن تشويش نقطة واحدة شاذة.
+
+   2) "قاع موصل محلي" (local conductive minimum) — نمط لا يُكتشف بمقارنة
+      نقطتين فقط: نقطة تنخفض عمّا قبلها ثم ترتفع عمّا بعدها (شكل V في
+      log-log)، وهو التوقيع الكلاسيكي لطبقة موصلة/مائية محصورة بين طبقتين
+      أعلى مقاومة (نمط H) — تُفلت غالباً من فحص الانحدار الثنائي البسيط. */
+function detectAquiferBreaks(pts){
+  if(!pts || pts.length<3) return [];
+  const rhos = pts.map(p=>p.rho);
+  const maxRho = Math.max(...rhos);
+  const results = [];
+
+  /* الانحدار اللوغاريتمي بين كل زوج نقاط متتالٍ، محسوب مسبقاً لإعادة استخدامه
+     في حساب اتساق الجوار لكلا نمطي الكشف أدناه */
+  const pairSlopes = [];
+  for(let i=0;i<pts.length-1;i++){
+    const p1=pts[i], p2=pts[i+1];
+    if(p1.ab2<=0||p2.ab2<=0||p1.rho<=0||p2.rho<=0){ pairSlopes.push(null); continue; }
+    const dLogAb = Math.log10(p2.ab2)-Math.log10(p1.ab2);
+    if(dLogAb<=0){ pairSlopes.push(null); continue; }
+    pairSlopes.push((Math.log10(p2.rho)-Math.log10(p1.rho))/dLogAb);
+  }
+
+  /* ── النمط 1: انحدار حاد بين نقطتين، مع تعزيز/تخفيض القوة حسب اتساق الجوار ── */
+  for(let i=0;i<pts.length-1;i++){
+    const p1=pts[i], p2=pts[i+1];
+    const slope = pairSlopes[i];
+    if(slope===null) continue;
+    const dropPct = (1 - p2.rho/p1.rho)*100;
+    const isSteep   = slope < -0.35;
+    const isDrop    = dropPct > 15;
+    const isLowZone = p2.rho < maxRho*0.6;
+    if(!(isSteep && isDrop && isLowZone)) continue;
+
+    /* اتساق الجوار: نسبة الأزواج المجاورة (قبل/بعد) التي تشارك نفس اتجاه
+       الانخفاض (سالبة أيضاً) — انخفاض مدعوم بجواره أوثق من انخفاض منعزل */
+    const neighborSlopes = [pairSlopes[i-1], pairSlopes[i+1]].filter(s=>s!==null&&s!==undefined);
+    const supportingNeighbors = neighborSlopes.filter(s=>s<0).length;
+    const consistencyBonus = neighborSlopes.length ? (supportingNeighbors/neighborSlopes.length)*15 : 0;
+    const isolatedPenalty = (neighborSlopes.length===2 && supportingNeighbors===0) ? 20 : 0;
+
+    const strength = Math.max(0, Math.min(100,
+      Math.round((Math.abs(slope)*40) + (dropPct*0.6) + consistencyBonus - isolatedPenalty)));
+    results.push({p1, p2, slope, dropPct, strength, pattern:'edge',
+      thickness: p2.ab2 - p1.ab2});
+  }
+
+  /* ── النمط 2: قاع موصل محلي (V-shape) — نقطة أدنى من جارتيها بوضوح ── */
+  for(let i=1;i<pts.length-1;i++){
+    const before=pts[i-1], mid=pts[i], after=pts[i+1];
+    if([before,mid,after].some(p=>p.ab2<=0||p.rho<=0)) continue;
+    const dropIn  = (1 - mid.rho/before.rho)*100; /* انخفاض عند الدخول للقاع */
+    const riseOut = (1 - mid.rho/after.rho)*100;  /* هنا نتوقعها سالبة (rho يرتفع) */
+    const isLocalMin = mid.rho < before.rho && mid.rho < after.rho;
+    const isMeaningful = dropIn > 10 && (-riseOut) > 10; /* ارتفاع فعلي بعد القاع */
+    const isLowZone = mid.rho < maxRho*0.6;
+    if(!(isLocalMin && isMeaningful && isLowZone)) continue;
+
+    /* تجاهل إن كانت مغطاة أصلاً بمرشح "edge" على نفس المنطقة تقريباً */
+    const alreadyCovered = results.some(r=>r.pattern==='edge' &&
+      Math.abs(r.p2.ab2-mid.ab2) < mid.ab2*0.15);
+    if(alreadyCovered) continue;
+
+    const avgDrop = (dropIn + (-riseOut))/2;
+    const strength = Math.max(0, Math.min(100, Math.round(avgDrop*1.1)));
+    results.push({p1:before, p2:mid, p3:after, slope:null, dropPct:dropIn, strength,
+      pattern:'minimum', thickness: after.ab2 - before.ab2});
+  }
+
+  /* ترتيب حسب القوة تنازلياً، وإزالة التكرار المتقارب في AB/2 */
+  results.sort((a,b)=>b.strength-a.strength);
+  const filtered = [];
+  results.forEach(r=>{
+    const key = r.pattern==='minimum' ? r.p2.ab2 : r.p2.ab2;
+    const near = filtered.some(f=>{
+      const fKey = f.pattern==='minimum' ? f.p2.ab2 : f.p2.ab2;
+      return Math.abs(fKey-key) < key*0.15;
+    });
+    if(!near) filtered.push(r);
+  });
+  return filtered.sort((a,b)=>a.p2.ab2-b.p2.ab2);
+}
+
+function updateAquiferBreaks(){
+  const body = document.getElementById('brkBody');
+  const pts = getCombinedAbPoints();
+  if(pts.length<3){
+    body.innerHTML = '<div class="brk-empty">أدخل أو استورد 3 قياسات على الأقل لتفعيل التحليل</div>';
+    return;
+  }
+  const allBreaks = detectAquiferBreaks(pts);
+  /* استبعاد الحوامل السطحية — نعرض فقط ما عمقه الفعّال 75م فأكثر */
+  const breaks = allBreaks.filter(b=>(b.p2.ab2*2/3) >= 75);
+  if(!breaks.length){
+    body.innerHTML = '<div class="brk-empty">لا توجد حوامل مائية مكتشفة بعمق 75 م فأكثر — إما لعدم وجودها ضمن الأعماق المقاسة، أو يلزم قياسات أعمق.</div>';
+    return;
+  }
+  body.innerHTML = breaks.map(b=>{
+    const depth1 = (b.p1.ab2*2/3).toFixed(1); /* العمق الفعّال ≈ AB/3 = (AB/2 × 2)/3 */
+    const depth2 = (b.p2.ab2*2/3).toFixed(1);
+    const thickness = (b.thickness*2/3).toFixed(1); /* سماكة تقريبية للنطاق المكتشف */
+    const strong = b.strength>=60;
+    const patternTag = b.pattern==='minimum' ? '📍 قاع موصل محلي' : '📉 انحدار حاد';
+    return `<div class="brk-item ${strong?'strong':''}">
+      <div class="brk-dot" style="${strong?'background:#00838f;box-shadow:0 0 0 3px rgba(0,131,143,.22);':''}"></div>
+      <div class="brk-info">
+        <div class="brk-range">عمق ${depth1} م ← ${depth2} م &nbsp;(AB/2: ${b.p1.ab2.toFixed(1)}→${b.p2.ab2.toFixed(1)} م) &nbsp;·&nbsp; سماكة≈${thickness} م</div>
+        <div class="brk-desc">ρ: ${b.p1.rho.toFixed(1)} ← ${b.p2.rho.toFixed(1)} Ω·m &nbsp;·&nbsp; قوة المؤشر: ${b.strength}% &nbsp;·&nbsp; ${patternTag}</div>
+      </div>
+      <div class="brk-drop">↓${b.dropPct.toFixed(0)}%</div>
+    </div>`;
+  }).join('') + `
+    <div class="brk-desc" style="margin-top:6px;line-height:1.6;">
+      📌 يعتمد الكشف على نمطين: انحدار لوغاريتمي حاد بين نقطتين متتاليتين (Δlog ρ / Δlog AB/2)، وقاع موصل محلي (نقطة أدنى من جارتيها) يُبرز الطبقات المائية المحصورة بين طبقتين أعلى مقاومة. تُعرض هنا فقط الحوامل بعمق فعّال 75م فأكثر. يجب تأكيد أي مؤشر بمقارنة مع آبار مجاورة والعمود الليتولوجي.
+    </div>`;
+}
+
+/* ═══════════════════════════════════════
+   تصدير تقرير PDF خاص بشيت "المنحنيات" فقط
+   (منحنى AB/2 + المقطع الجيوكهربائي + الحوامل المائية بعد 75م فقط)
+═══════════════════════════════════════ */
+function exportCurvesPDF(){
+  const pts = getCombinedAbPoints();
+  if(!pts || pts.length<3){
+    alert('أدخل أو استورد 3 قياسات على الأقل قبل تصدير تقرير المنحنيات.');
+    return;
+  }
+
+  /* كل الحوامل المكتشفة، ثم استبعاد الحوامل السطحية (العمق الفعّال < 75م) */
+  const allBreaks = detectAquiferBreaks(pts);
+  const deepBreaks = allBreaks
+    .map(b=>({...b, depth1:(b.p1.ab2*2/3), depth2:(b.p2.ab2*2/3)}))
+    .filter(b=>b.depth2 >= 75);
+
+  const proj = (typeof projNameI!=='undefined' && projNameI.value) ? projNameI.value : 'غير محدد';
+  const dir  = (typeof projDirI!=='undefined' && projDirI.value) ? projDirI.value : '—';
+  const coords = (typeof projCoordI!=='undefined' && projCoordI.value) ? projCoordI.value : '—';
+  const now = new Date().toLocaleString('ar-EG');
+
+  const curveImg = captureCanvasImage('abChart') || captureCanvasImage('rhoChart');
+  const vgeoImg  = captureCanvasImage('vgeoCanvas');
+
+  const breakRows = deepBreaks.length ? deepBreaks.map(b=>{
+    const strong = b.strength>=60;
+    return `<div class="rpt-row" style="align-items:flex-start;flex-direction:column;gap:3px;padding:8px 0;">
+      <div style="display:flex;justify-content:space-between;width:100%;">
+        <span class="rl">عمق ${b.depth1.toFixed(1)} م ← ${b.depth2.toFixed(1)} م &nbsp;(AB/2: ${b.p1.ab2.toFixed(1)}→${b.p2.ab2.toFixed(1)} م)</span>
+        <span class="rv" style="color:${strong?'#00838f':'#5a7ab0'};">↓${b.dropPct.toFixed(0)}%</span>
+      </div>
+      <div style="font-size:.63rem;color:#5a7ab0;">ρ: ${b.p1.rho.toFixed(1)} ← ${b.p2.rho.toFixed(1)} Ω·m &nbsp;·&nbsp; قوة المؤشر: ${b.strength}%</div>
+    </div>`;
+  }).join('') : `<div style="background:#f3f8ff;border-radius:10px;padding:12px;font-size:.7rem;color:#5a7ab0;text-align:center;">
+      لا توجد حوامل مائية محتملة بعمق 75 م فأعمق ضمن القياسات الحالية.
+    </div>`;
+
+  const reportHTML = `
+  <div class="rpt-card">
+    <div class="rpt-card-hd">🗂 معلومات المشروع</div>
+    <div class="rpt-card-bd">
+      <div class="rpt-row"><span class="rl">اسم المشروع</span><span class="rv">${proj}</span></div>
+      <div class="rpt-row"><span class="rl">الاتجاه</span><span class="rv">${dir}</span></div>
+      <div class="rpt-row"><span class="rl">الإحداثيات</span><span class="rv" style="font-size:.65rem;">${coords}</span></div>
+      <div class="rpt-row"><span class="rl">الجيوفيزيائي</span><span class="rv">وسام الشيخ</span></div>
+      <div class="rpt-row"><span class="rl">تاريخ التقرير</span><span class="rv">${now}</span></div>
+      <div class="rpt-row"><span class="rl">الجهاز</span><span class="rv">SAS 300 · ABEM · تشكيل شلمبرجير</span></div>
+    </div>
+  </div>
+
+  ${(curveImg || vgeoImg) ? `
+  <div class="rpt-card">
+    <div class="rpt-card-hd">📐 المنحنيات والمقطع الجيوكهربائي</div>
+    <div class="rpt-card-bd">
+      ${curveImg ? `<div style="margin-bottom:10px;"><div style="font-size:.65rem;font-weight:800;color:#1e3d78;margin-bottom:5px;">منحنى AB/2 — المقاومية الحقيقية</div><img src="${curveImg}" style="width:100%;border-radius:8px;border:1px solid #c2d9f8;"/></div>` : ''}
+      ${vgeoImg ? `<div><div style="font-size:.65rem;font-weight:800;color:#1e3d78;margin-bottom:5px;">المقطع الجيوكهربائي الرأسي</div><img src="${vgeoImg}" style="width:100%;border-radius:8px;border:1px solid #c2d9f8;"/></div>` : ''}
+    </div>
+  </div>` : ''}
+
+  <div class="rpt-card">
+    <div class="rpt-card-hd">💧 الحوامل المائية المحتملة — بعمق 75 م فأعمق فقط</div>
+    <div class="rpt-card-bd">
+      ${breakRows}
+      <div style="margin-top:9px;font-size:.6rem;color:#5a7ab0;line-height:1.7;">
+        📌 تم استبعاد الحوامل السطحية (أقل من 75 م) من هذا التقرير عمداً. يعتمد الكشف على الانحدار اللوغاريتمي للمنحنى (Δlog ρ / Δlog AB/2)، ويجب تأكيده بمقارنة مع آبار مجاورة والعمود الليتولوجي.
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:.6rem;color:#5a7ab0;text-align:center;padding:8px 0;">
+    الجيوفيزيائي: وسام الشيخ — تقرير منحنيات SAS300
+  </div>`;
+
+  const win = window.open('','_blank','width=800,height=900');
+  win.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>تقرير المنحنيات — SAS 300</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Tajawal',sans-serif;background:#fff;color:#081840;padding:20px;direction:rtl;}
+  @page{size:A4;margin:18mm 15mm 18mm 15mm;}
+  @media print{body{padding:0;}.no-print{display:none;}}
+
+  .print-header{text-align:center;border-bottom:3px solid #1148a8;padding-bottom:14px;margin-bottom:18px;}
+  .print-header h1{font-size:1.1rem;font-weight:900;color:#0b1f50;}
+  .print-header .sub{font-size:.72rem;color:#5a7ab0;margin-top:4px;}
+  .print-header .meta{font-size:.65rem;color:#888;margin-top:3px;}
+
+  .rpt-card{border:1.5px solid #c2d9f8;border-radius:12px;overflow:hidden;margin-bottom:12px;break-inside:avoid;}
+  .rpt-card-hd{background:linear-gradient(90deg,#0b1f50,#1148a8);color:#fff;padding:7px 13px;font-size:.72rem;font-weight:800;}
+  .rpt-card-bd{padding:10px 13px;}
+  .rpt-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #e8f2fd;font-size:.68rem;}
+  .rpt-row:last-child{border-bottom:none;}
+  .rl{color:#5a7ab0;font-weight:700;}
+  .rv{color:#081840;font-weight:900;}
+  .rpt-card img{max-width:100%;break-inside:avoid;}
+
+  .no-print{margin-bottom:14px;display:flex;gap:10px;justify-content:center;}
+  .no-print button{padding:9px 22px;border:none;border-radius:9px;font-family:'Tajawal';font-weight:800;font-size:.78rem;cursor:pointer;background:#1148a8;color:#fff;}
+
+  .print-footer{text-align:center;font-size:.58rem;color:#aaa;margin-top:16px;padding-top:10px;border-top:1px solid #e8f2fd;}
+</style>
+</head>
+<body>
+<div class="no-print"><button onclick="window.print()">🖨️ طباعة / حفظ PDF</button></div>
+<div class="print-header">
+  <h1>تقرير المنحنيات والمقطع الجيوكهربائي</h1>
+  <div class="sub">الحوامل المائية المحتملة — بعمق 75 م فأعمق فقط</div>
+  <div class="meta">SAS 300 · ABEM · تشكيل شلمبرجير · الجيوفيزيائي: وسام الشيخ</div>
+</div>
+${reportHTML}
+<div class="print-footer">الجيوفيزيائي: وسام الشيخ — SAS300</div>
+</body>
+</html>`);
+  win.document.close();
+  setTimeout(()=>{ win.focus(); win.print(); }, 600);
+}
+
+/* ═══════════════════════════════════════
+   VERTICAL GEO-ELECTRIC SECTION — IPI2Win-style discrete layers
+═══════════════════════════════════════ */
+
+let vgeoMode = 'layers'; /* 'layers' = طبقات صلبة (IPI style) | 'gradient' = تدرّج مستمر */
+
+/* ═══ تقسيم الطبقات: تلقائي / يدوي (أسلوب IPI2Win) ═══
+   manualVgeoBounds: مصفوفة أعماق (بالمتر) تمثّل الحدود الفاصلة بين الطبقات،
+   يحدّدها المستخدم يدوياً بالنقر/السحب على المقطع، أو يملأها التقسيم التلقائي.
+   عندما تكون فارغة، يعود النظام للتقسيم الافتراضي (منتصف المسافة بين نقاط القياس). */
+let manualVgeoBounds = [];
+let vgeoEditMode = false;   /* هل وضع "تعديل يدوي" مفعّل حالياً */
+let _vgeoDragBoundIdx = -1; /* فهرس الحد الجاري سحبه حالياً (-1 = لا يوجد) */
+let _vgeoLongPressTimer = null;
+
+function setVgeoMode(mode){
+  vgeoMode = mode;
+  document.getElementById('vgeoModeLayersBtn').classList.toggle('on', mode==='layers');
+  document.getElementById('vgeoModeGradBtn').classList.toggle('on', mode==='gradient');
+  updateVerticalGeoSection();
+}
+
+/* لوحة ألوان منفصلة (discrete) بأسلوب IPI2Win: 9 نطاقات مقاومية ثابتة،
+   كل نطاق له لون واحد صريح (بلا تدرّج ناعم) لتمييز الطبقات بوضوح تام.
+   من الأزرق الغامق (مقاومية منخفضة جداً/مياه مالحة) إلى البني الغامق (مقاومية عالية جداً/صخر جاف). */
+const vgeoBands = [
+  {max:5,    c:[10,40,140],   label:'مياه/طين مشبع جداً'},
+  {max:12,   c:[25,90,200],   label:'تشبع مائي عالٍ'},
+  {max:25,   c:[64,150,230],  label:'رطوبة عالية'},
+  {max:50,   c:[80,190,210],  label:'رطوبة متوسطة-عالية'},
+  {max:100,  c:[110,200,140], label:'رطوبة متوسطة'},
+  {max:200,  c:[190,210,80],  label:'رطوبة منخفضة'},
+  {max:400,  c:[230,170,55],  label:'جاف نسبياً'},
+  {max:800,  c:[210,95,40],   label:'جاف'},
+  {max:Infinity, c:[120,45,30], label:'جاف جداً / صخر صلب'}
+];
+
+function vgeoBandFor(rho){
+  for(const b of vgeoBands){ if(rho <= b.max) return b; }
+  return vgeoBands[vgeoBands.length-1];
+}
+
+function vgeoColorRgb(rho){
+  const b = vgeoBandFor(rho);
+  return `rgb(${b.c[0]},${b.c[1]},${b.c[2]})`;
+}
+
+/* نسخة متدرجة (للوضع gradient وللـ legend) — نفس ألوان النطاقات لكن بانتقال ناعم بينها */
+function vgeoColorAt(t){
+  t = Math.max(0, Math.min(1, t));
+  const stops = vgeoBands.map((b,i)=>({p:i/(vgeoBands.length-1), c:b.c}));
+  for(let i=0;i<stops.length-1;i++){
+    const a=stops[i], b=stops[i+1];
+    if(t>=a.p && t<=b.p){
+      const lt=(t-a.p)/((b.p-a.p)||1);
+      const r=Math.round(a.c[0]+(b.c[0]-a.c[0])*lt);
+      const g=Math.round(a.c[1]+(b.c[1]-a.c[1])*lt);
+      const bl=Math.round(a.c[2]+(b.c[2]-a.c[2])*lt);
+      return `rgb(${r},${g},${bl})`;
+    }
+  }
+  return `rgb(${stops[stops.length-1].c.join(',')})`;
+}
+
+/* يبني نقاط (عمق، ρ) من مصدر موحّد: القياسات اليدوية + المستوردة من Excel */
+function getVgeoDepthPoints(){
+  const pts = getCombinedAbPoints(); /* {ab2, rho} */
+  return pts
+    .map(p=>({depth: p.ab2*2/3, rho:p.rho})) /* العمق الفعّال ≈ AB/3 */
+    .sort((a,b)=>a.depth-b.depth);
+}
+
+/* استيفاء لوغاريتمي لقيمة ρ عند أي عمق اعتماداً على نقاط القياس pts (مرتبة تصاعدياً) */
+function vgeoInterpRhoAtDepth(pts, depth){
+  if(!pts.length) return 1;
+  if(depth <= pts[0].depth) return pts[0].rho;
+  if(depth >= pts[pts.length-1].depth) return pts[pts.length-1].rho;
+  let j=0;
+  while(j<pts.length-1 && pts[j+1].depth < depth) j++;
+  const a=pts[j], b=pts[j+1];
+  const t = (depth-a.depth)/((b.depth-a.depth)||1);
+  return Math.pow(10, Math.log10(a.rho) + (Math.log10(b.rho)-Math.log10(a.rho))*t);
+}
+
+/* متوسط ρ (لوغاريتمي) لطبقة تمتد بين top و bottom، بأخذ متوسط عيّنات داخل المجال */
+function vgeoAvgRhoInRange(pts, top, bottom){
+  const nSamples = 9;
+  let sumLog=0, n=0;
+  for(let i=0;i<nSamples;i++){
+    const d = top + (bottom-top)*(i/(nSamples-1));
+    const r = vgeoInterpRhoAtDepth(pts, d);
+    if(r>0){ sumLog += Math.log10(r); n++; }
+  }
+  return n ? Math.pow(10, sumLog/n) : vgeoInterpRhoAtDepth(pts, (top+bottom)/2);
+}
+
+/* ═══ التقسيم التلقائي الافتراضي (منتصف المسافة اللوغاريتمي بين نقاط القياس) ═══
+   يُستخدم كنقطة بداية قبل أي تعديل يدوي، وأيضاً كأساس لدمج الطبقات المتشابهة. */
+function autoVgeoBounds(pts){
+  const bounds = [0];
+  for(let i=0;i<pts.length-1;i++){
+    const d1=pts[i].depth, d2=pts[i+1].depth;
+    const mid = (d1<=0||d2<=0) ? (d1+d2)/2 : Math.sqrt(d1*d2);
+    bounds.push(mid);
+  }
+  const lastDepth = pts[pts.length-1].depth;
+  bounds.push(lastDepth*1.15); /* امتداد الطبقة الأخيرة قليلاً لتمثيل "نصف مساحة" */
+  return bounds;
+}
+
+/* ═══ تحويل نقاط القياس إلى "طبقات" منفصلة (شبيه بمخرجات الانعكاس IPI2Win) ═══
+   وضعان:
+   1) تلقائي (manualVgeoBounds فارغة): كل نقطة قياس تمثّل مركز طبقة بسماكة تمتد
+      لمنتصف المسافة مع الجارتين، ثم تُدمج الطبقات المتجاورة القريبة القيمة.
+   2) يدوي (manualVgeoBounds بها حدود من المستخدم أو من زر "تقسيم تلقائي"):
+      الحدود تُستخدم كما هي حرفياً، وρ كل طبقة = متوسط لوغاريتمي للمنحني ضمن مجالها. */
+function buildVgeoLayers(pts){
+  if(!pts || pts.length<1) return [];
+
+  if(manualVgeoBounds.length>=2){
+    /* تنظيف: ترتيب تصاعدي + إزالة تكرار قريب جداً + ضمان البداية عند 0 والنهاية عند أقصى عمق */
+    const lastDepth = pts[pts.length-1].depth*1.15;
+    let b = [...manualVgeoBounds].filter(x=>x>=0 && isFinite(x)).sort((a,c)=>a-c);
+    b = b.filter((x,i)=> i===0 || (x-b[i-1]) > Math.max(0.05, lastDepth*0.005));
+    if(b[0] > 0.001) b.unshift(0); else b[0]=0;
+    if(b[b.length-1] < lastDepth*0.999) b.push(lastDepth); else b[b.length-1]=lastDepth;
+
+    const layers = [];
+    for(let i=0;i<b.length-1;i++){
+      const top=b[i], bottom=b[i+1];
+      if(bottom-top < 0.001) continue;
+      layers.push({n:layers.length+1, top, bottom, h:bottom-top, rho:vgeoAvgRhoInRange(pts, top, bottom)});
+    }
+    return layers;
+  }
+
+  /* ═══ الوضع التلقائي الافتراضي ═══ */
+  const bounds = autoVgeoBounds(pts);
+  let raw = pts.map((p,i)=>({
+    top:bounds[i], bottom:bounds[i+1], rho:p.rho, ab2:p.ab2
+  }));
+
+  /* دمج الطبقات المتجاورة القريبة القيمة (فرق أقل من 12% لوغاريتمياً) لتبسيط المخرجات */
+  const merged = [];
+  raw.forEach(l=>{
+    const prev = merged[merged.length-1];
+    if(prev){
+      const diff = Math.abs(Math.log10(l.rho)-Math.log10(prev.rho));
+      if(diff < 0.05){ /* ~12% فرق */
+        prev.bottom = l.bottom;
+        prev.rho = (prev.rho*(prev._n||1) + l.rho) / ((prev._n||1)+1);
+        prev._n = (prev._n||1)+1;
+        return;
+      }
+    }
+    merged.push({...l, _n:1});
+  });
+
+  return merged.map((l,i)=>({
+    n:i+1, top:l.top, bottom:l.bottom, h:l.bottom-l.top, rho:l.rho
+  }));
+}
+
+/* ═══ التقسيم التلقائي الذكي (زر "⚡ تقسيم تلقائي") ═══
+   يحلل الانحدار اللوغاريتمي (Δlog ρ / Δlog depth) بين كل نقطتين متتاليتين،
+   ويضع حداً فاصلاً عند كل نقطة يتغيّر فيها الانحدار تغيّراً حاداً (تغيّر اتجاه
+   أو قفزة في الحدّة) — هذا يحاكي طريقة اختيار حدود الطبقات في برامج الانعكاس
+   مثل IPI2Win، حيث تمثّل نقاط انعطاف المنحني حدود التماس بين الطبقات الجيولوجية. */
+function computeAutoVgeoBounds(pts){
+  if(!pts || pts.length<3) return autoVgeoBounds(pts||[]);
+
+  /* انحدار كل قطعة بين نقطتين متتاليتين */
+  const slopes = [];
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i], b=pts[i+1];
+    const dLogD = Math.log10(Math.max(b.depth,0.01)) - Math.log10(Math.max(a.depth,0.01));
+    const dLogR = Math.log10(b.rho) - Math.log10(a.rho);
+    slopes.push(dLogD>0 ? dLogR/dLogD : 0);
+  }
+
+  const baseBounds = autoVgeoBounds(pts); /* منتصف المسافة بين كل نقطتين */
+  const chosen = [0];
+  for(let i=0;i<slopes.length-1;i++){
+    const change = Math.abs(slopes[i+1]-slopes[i]);
+    /* عتبة التغيّر: تغيّر انحدار واضح (> 0.4) يعني نقطة انعطاف = حد طبقة محتمل */
+    if(change > 0.4){
+      chosen.push(baseBounds[i+1]);
+    }
+  }
+  const lastDepth = pts[pts.length-1].depth*1.15;
+  chosen.push(lastDepth);
+
+  /* تصفية: إزالة حدود متقاربة جداً (أقل من 5% من أقصى عمق) للحفاظ على طبقات ذات معنى */
+  const minGap = Math.max(0.1, lastDepth*0.04);
+  const cleaned = [chosen[0]];
+  chosen.slice(1).forEach(v=>{ if(v-cleaned[cleaned.length-1] >= minGap) cleaned.push(v); });
+  if(cleaned[cleaned.length-1] !== lastDepth){
+    if(lastDepth - cleaned[cleaned.length-1] < minGap) cleaned[cleaned.length-1] = lastDepth;
+    else cleaned.push(lastDepth);
+  }
+  /* إن لم يُكتشف أي انعطاف ذو معنى، أعد التقسيم الافتراضي (منتصف المسافة) بدل حدّين فقط */
+  return cleaned.length>=3 ? cleaned : baseBounds;
+}
+
+/* زر "⚡ تقسيم تلقائي": يحسب الحدود ذكياً بناءً على انعطافات المنحني، ويملأها
+   في manualVgeoBounds بحيث تصبح قابلة للتعديل اليدوي بعد ذلك مباشرة. */
+function autoSegmentVgeo(){
+  const pts = getVgeoDepthPoints();
+  if(pts.length<3){
+    alert('أدخل أو استورد 3 قياسات على الأقل لتفعيل التقسيم التلقائي.');
+    return;
+  }
+  manualVgeoBounds = computeAutoVgeoBounds(pts).slice(1,-1); /* بدون 0 وبدون آخر حد (يُعادان تلقائياً) */
+  updateVerticalGeoSection();
+  updateAbChart();
+  saveLS();
+}
+
+/* إعادة الضبط لوضع التقسيم الافتراضي (منتصف المسافة بين نقاط القياس) ومسح أي تعديل يدوي */
+function resetVgeoBreaks(){
+  if(!manualVgeoBounds.length) return;
+  if(!confirm('إعادة ضبط تقسيم الطبقات إلى الوضع الافتراضي؟ سيُمسح أي تعديل يدوي.')) return;
+  manualVgeoBounds = [];
+  updateVerticalGeoSection();
+  updateAbChart();
+  saveLS();
+}
+
+/* تفعيل/إلغاء وضع "تعديل يدوي" التفاعلي على المقطع */
+function toggleVgeoEditMode(){
+  vgeoEditMode = !vgeoEditMode;
+  document.getElementById('vgeoEditBtn').classList.toggle('on', vgeoEditMode);
+  document.getElementById('vgeoEditHint').classList.toggle('show', vgeoEditMode);
+  document.getElementById('vgeoCanvas').classList.toggle('edit-mode', vgeoEditMode);
+  /* عند الدخول لوضع التعديل لأول مرة بلا حدود يدوية، ابدأ من التقسيم الحالي المعروض */
+  if(vgeoEditMode && !manualVgeoBounds.length && _vgeoLastLayers.length>1){
+    manualVgeoBounds = _vgeoLastLayers.slice(0,-1).map(l=>l.bottom);
+    updateVerticalGeoSection();
+    updateAbChart();
+  }
+}
+
+function vgeoInterpLabel(rho){
+  return vgeoBandFor(rho).label;
+}
+
+let _vgeoLastPoints = []; /* محفوظة للاستخدام في hover tooltip */
+let _vgeoLastLayers = [];
+
+function updateVerticalGeoSection(){
+  const canvas = document.getElementById('vgeoCanvas');
+  const ticksEl = document.getElementById('vgeoDepthTicks');
+  const scaleRow = document.getElementById('vgeoScaleRow');
+  const tbody = document.getElementById('vgeoLayerTbody');
+  if(!canvas) return;
+
+  const pts = getVgeoDepthPoints();
+  _vgeoLastPoints = pts;
+
+  const wrap = canvas.parentElement;
+  const cssWidth = wrap.clientWidth || 260;
+  const cssHeight = 320;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = cssWidth*dpr; canvas.height = cssHeight*dpr;
+  canvas.style.height = cssHeight+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssWidth,cssHeight);
+
+  if(pts.length<2){
+    ctx.fillStyle='#eef4fc';
+    ctx.fillRect(0,0,cssWidth,cssHeight);
+    ctx.fillStyle='#5a7ab0';
+    ctx.font='12px Tajawal';
+    ctx.textAlign='center';
+    ctx.fillText('أدخل أو استورد قياسات لعرض المقطع', cssWidth/2, cssHeight/2);
+    ticksEl.innerHTML='';
+    scaleRow.innerHTML='';
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:14px;color:var(--tx3);">لا توجد بيانات كافية بعد</td></tr>';
+    updateVgeoLegend(1,1000);
+    const resetBtn0 = document.getElementById('vgeoResetBtn');
+    if(resetBtn0) resetBtn0.style.opacity = manualVgeoBounds.length ? '1' : '.45';
+    return;
+  }
+
+  const minRho = Math.min(...pts.map(p=>p.rho));
+  const maxRho = Math.max(...pts.map(p=>p.rho));
+  const layers = buildVgeoLayers(pts);
+  _vgeoLastLayers = layers;
+  const maxDepth = layers.length ? layers[layers.length-1].bottom : pts[pts.length-1].depth;
+
+  if(vgeoMode==='layers'){
+    /* ═══ رسم طبقات صلبة الحدود — أسلوب IPI2Win ═══ */
+    layers.forEach((l,li)=>{
+      const y0 = (l.top/maxDepth)*cssHeight;
+      const y1 = (l.bottom/maxDepth)*cssHeight;
+      ctx.fillStyle = vgeoColorRgb(l.rho);
+      ctx.fillRect(0, y0, cssWidth, Math.max(1,y1-y0));
+      /* حد فاصل بين الطبقات — أوضح وأسمك في وضع التعديل اليدوي (قابل للسحب) */
+      const isDraggable = vgeoEditMode && li>0;
+      ctx.strokeStyle = isDraggable ? '#00e5ff' : '#ffffff';
+      ctx.lineWidth = isDraggable ? 3 : 1.6;
+      ctx.beginPath(); ctx.moveTo(0,y0); ctx.lineTo(cssWidth,y0); ctx.stroke();
+      if(isDraggable){
+        /* مقبض صغير في المنتصف يوحي بإمكانية السحب */
+        ctx.fillStyle='#00e5ff';
+        ctx.beginPath(); ctx.arc(cssWidth/2, y0, 4, 0, Math.PI*2); ctx.fill();
+      }
+
+      /* قيمة ρ مكتوبة داخل الطبقة إذا كانت سميكة بما يكفي */
+      if((y1-y0) > 16){
+        ctx.fillStyle = (l.rho>150) ? 'rgba(255,255,255,.92)' : 'rgba(8,24,64,.85)';
+        ctx.font='700 10px Tajawal';
+        ctx.textAlign='center';
+        ctx.fillText(`${l.rho.toFixed(1)} Ω·m`, cssWidth/2, (y0+y1)/2 + 3);
+      }
+    });
+    /* إطار سفلي */
+    ctx.strokeStyle='#ffffff'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(0,cssHeight); ctx.lineTo(cssWidth,cssHeight); ctx.stroke();
+  } else {
+    /* ═══ وضع التدرّج المستمر (القديم) ═══ */
+    const logMin = Math.log10(Math.max(minRho,0.1));
+    const logMax = Math.log10(Math.max(maxRho,0.1));
+    const logRange = Math.max(0.0001, logMax-logMin);
+    const nSlices = 240;
+    for(let i=0;i<nSlices;i++){
+      const depth0 = (i/nSlices)*maxDepth;
+      const depth1 = ((i+1)/nSlices)*maxDepth;
+      const depthMid = (depth0+depth1)/2;
+      let rho;
+      if(depthMid <= pts[0].depth) rho = pts[0].rho;
+      else if(depthMid >= pts[pts.length-1].depth) rho = pts[pts.length-1].rho;
+      else{
+        let j=0;
+        while(j<pts.length-1 && pts[j+1].depth < depthMid) j++;
+        const a=pts[j], b=pts[j+1];
+        const t = (depthMid-a.depth)/((b.depth-a.depth)||1);
+        rho = Math.pow(10, Math.log10(a.rho) + (Math.log10(b.rho)-Math.log10(a.rho))*t);
+      }
+      ctx.fillStyle = vgeoColorRgb(rho);
+      const y0 = (depth0/maxDepth)*cssHeight;
+      const y1 = (depth1/maxDepth)*cssHeight;
+      ctx.fillRect(0, y0, cssWidth, (y1-y0)+1);
+    }
+    ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=1;
+    pts.forEach(p=>{
+      const y=(p.depth/maxDepth)*cssHeight;
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cssWidth,y);ctx.stroke();
+    });
+  }
+
+  /* مقياس أعماق جانبي */
+  const tickCount = 6;
+  let ticksHtml='';
+  for(let i=0;i<=tickCount;i++){
+    const d = (maxDepth*i/tickCount).toFixed(1);
+    ticksHtml += `<span>${d}م</span>`;
+  }
+  ticksEl.innerHTML = ticksHtml;
+
+  scaleRow.innerHTML = `<span>0 م (السطح)</span><span>أقصى عمق: ${maxDepth.toFixed(1)} م</span>`;
+
+  updateVgeoLegend(minRho, maxRho);
+  updateVgeoLayerTable(layers);
+  const resetBtn = document.getElementById('vgeoResetBtn');
+  if(resetBtn) resetBtn.style.opacity = manualVgeoBounds.length ? '1' : '.45';
+
+  /* تفعيل التفاعل (hover / لمس) لعرض القيمة عند كل عمق */
+  canvas.onmousemove = (e)=>{ vgeoShowTooltip(e, canvas, maxDepth, pts); vgeoHandleDrag(e, canvas, maxDepth, pts); };
+  canvas.onmouseleave = ()=>{ document.getElementById('vgeoTooltip').style.display='none'; };
+  canvas.ontouchmove = (e)=>{ e.preventDefault(); clearTimeout(_vgeoLongPressTimer); vgeoShowTooltip(e.touches[0], canvas, maxDepth, pts); vgeoHandleDrag(e.touches[0], canvas, maxDepth, pts); };
+  canvas.ontouchend = ()=>{ clearTimeout(_vgeoLongPressTimer); document.getElementById('vgeoTooltip').style.display='none'; vgeoEndDrag(); };
+
+  /* تفعيل تفاعلات وضع "التعديل اليدوي" — إضافة/سحب/حذف حدود الطبقات */
+  canvas.onmousedown = (e)=>vgeoStartInteraction(e, canvas, maxDepth, layers);
+  canvas.onmouseup   = ()=>vgeoEndDrag();
+  canvas.ontouchstart= (e)=>{
+    e.preventDefault();
+    const touch = e.touches[0];
+    vgeoStartInteraction(touch, canvas, maxDepth, layers, true);
+    /* ضغط مطوّل (~550ms) بلا سحب على حد قائم = حذفه (بديل عن النقر المزدوج على اللمس) */
+    clearTimeout(_vgeoLongPressTimer);
+    if(_vgeoDragBoundIdx>=0){
+      const startIdx = _vgeoDragBoundIdx;
+      _vgeoLongPressTimer = setTimeout(()=>{
+        if(_vgeoDragBoundIdx===startIdx){
+          const target = manualVgeoBounds[startIdx];
+          manualVgeoBounds = manualVgeoBounds.filter((b,i)=>i!==startIdx);
+          _vgeoDragBoundIdx = -1;
+          updateVerticalGeoSection();
+          updateAbChart();
+          saveLS();
+        }
+      }, 550);
+    }
+  };
+  canvas.ondblclick  = (e)=>vgeoTryDeleteBoundary(e, canvas, maxDepth, layers);
+}
+
+/* عتبة القرب (بالبكسل) لاعتبار الضغط "على" خط فاصل بدل "داخل" طبقة */
+const VGEO_HIT_PX = 10;
+
+function vgeoDepthFromEvent(e, canvas, maxDepth){
+  const rect = canvas.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  return { y, depth: Math.max(0, Math.min(maxDepth, (y/rect.height)*maxDepth)), rect };
+}
+
+/* بداية التفاعل: يحدّد إن كان الضغط قريباً من حد فاصل (بدء سحب) أو داخل طبقة (إضافة حد جديد، فقط في وضع التعديل) */
+function vgeoStartInteraction(e, canvas, maxDepth, layers, isTouch){
+  if(!vgeoEditMode || layers.length<2) return;
+  const {y, depth, rect} = vgeoDepthFromEvent(e, canvas, maxDepth);
+  const pxPerM = rect.height/maxDepth;
+
+  /* هل الضغط قريب من حد داخلي (ليس أول 0 ولا آخر حد)؟ */
+  let nearIdx = -1, nearDist = Infinity;
+  layers.slice(0,-1).forEach((l,i)=>{
+    const dPx = Math.abs((l.bottom*pxPerM) - y);
+    if(dPx < nearDist){ nearDist = dPx; nearIdx = i; }
+  });
+
+  if(nearIdx>=0 && nearDist <= VGEO_HIT_PX){
+    /* ابدأ سحب هذا الحد */
+    if(!manualVgeoBounds.length){
+      manualVgeoBounds = _vgeoLastLayers.slice(0,-1).map(l=>l.bottom);
+    }
+    /* أوجد فهرس هذا الحد داخل manualVgeoBounds (الأقرب قيمياً) */
+    let idx=-1, best=Infinity;
+    manualVgeoBounds.forEach((b,i)=>{ const d=Math.abs(b-layers[nearIdx].bottom); if(d<best){best=d;idx=i;} });
+    _vgeoDragBoundIdx = idx;
+  } else if(!isTouch){
+    /* ضغطة عادية داخل طبقة (وليست سحباً) → أضف حداً جديداً عند نقطة الضغط */
+    vgeoAddBoundaryAt(depth, layers);
+  }
+}
+
+function vgeoHandleDrag(e, canvas, maxDepth, pts){
+  if(!vgeoEditMode || _vgeoDragBoundIdx<0) return;
+  const {depth} = vgeoDepthFromEvent(e, canvas, maxDepth);
+  const minGap = Math.max(0.05, maxDepth*0.01);
+  const sorted = [...manualVgeoBounds].sort((a,b)=>a-b);
+  const curVal = manualVgeoBounds[_vgeoDragBoundIdx];
+  const posInSorted = sorted.indexOf(curVal);
+  const lower = posInSorted>0 ? sorted[posInSorted-1]+minGap : minGap;
+  const upper = posInSorted<sorted.length-1 ? sorted[posInSorted+1]-minGap : maxDepth-minGap;
+  const clamped = Math.max(lower, Math.min(upper, depth));
+  manualVgeoBounds[_vgeoDragBoundIdx] = clamped;
+  updateVerticalGeoSection();
+  updateAbChart();
+}
+
+function vgeoEndDrag(){
+  if(_vgeoDragBoundIdx>=0){ _vgeoDragBoundIdx=-1; saveLS(); }
+}
+
+/* نقر عادي داخل طبقة (وليس على حد قائم) أثناء وضع التعديل → إضافة حد جديد يقسم تلك الطبقة لنصفين */
+function vgeoAddBoundaryAt(depth, layers){
+  if(!manualVgeoBounds.length){
+    manualVgeoBounds = layers.slice(0,-1).map(l=>l.bottom);
+  }
+  const host = layers.find(l=>depth>l.top+0.01 && depth<l.bottom-0.01);
+  if(!host) return; /* قريب جداً من حد موجود أو خارج النطاق */
+  manualVgeoBounds.push(depth);
+  updateVerticalGeoSection();
+  updateAbChart();
+  saveLS();
+}
+
+/* ضغط مزدوج على حد فاصل قريب → حذفه (دمج الطبقتين المتجاورتين) */
+function vgeoTryDeleteBoundary(e, canvas, maxDepth, layers){
+  if(!vgeoEditMode || layers.length<2) return;
+  const {y, rect} = vgeoDepthFromEvent(e, canvas, maxDepth);
+  const pxPerM = rect.height/maxDepth;
+  let nearIdx=-1, nearDist=Infinity;
+  layers.slice(0,-1).forEach((l,i)=>{
+    const dPx = Math.abs((l.bottom*pxPerM) - y);
+    if(dPx < nearDist){ nearDist=dPx; nearIdx=i; }
+  });
+  if(nearIdx>=0 && nearDist<=VGEO_HIT_PX){
+    const target = layers[nearIdx].bottom;
+    manualVgeoBounds = manualVgeoBounds.filter(b=>Math.abs(b-target) > 0.001);
+    updateVerticalGeoSection();
+    updateAbChart();
+    saveLS();
+  }
+}
+
+/* يملأ جدول الطبقات أسفل المقطع — يحاكي جدول N/ρ/h/d في IPI2Win */
+function updateVgeoLayerTable(layers){
+  const tbody = document.getElementById('vgeoLayerTbody');
+  if(!tbody) return;
+  if(!layers.length){
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:14px;color:var(--tx3);">لا توجد بيانات</td></tr>';
+    return;
+  }
+  tbody.innerHTML = layers.map(l=>{
+    const isLast = l===layers[layers.length-1];
+    const hTxt = isLast ? '∞' : l.h.toFixed(2);
+    return `<tr>
+      <td>${l.n}</td>
+      <td><span class="vg-swatch" style="background:${vgeoColorRgb(l.rho)};"></span>${l.rho.toFixed(1)}</td>
+      <td>${hTxt}</td>
+      <td>${l.bottom.toFixed(1)}</td>
+      <td class="vg-interp">${vgeoInterpLabel(l.rho)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function vgeoShowTooltip(e, canvas, maxDepth, pts){
+  const rect = canvas.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  const depth = Math.max(0, Math.min(maxDepth, (y/rect.height)*maxDepth));
+
+  let rho;
+  if(vgeoMode==='layers' && _vgeoLastLayers.length){
+    const l = _vgeoLastLayers.find(l=>depth>=l.top && depth<=l.bottom) || _vgeoLastLayers[_vgeoLastLayers.length-1];
+    rho = l.rho;
+  } else {
+    if(depth <= pts[0].depth) rho = pts[0].rho;
+    else if(depth >= pts[pts.length-1].depth) rho = pts[pts.length-1].rho;
+    else{
+      let j=0;
+      while(j<pts.length-1 && pts[j+1].depth < depth) j++;
+      const a=pts[j], b=pts[j+1];
+      const t = (depth-a.depth)/((b.depth-a.depth)||1);
+      rho = Math.pow(10, Math.log10(a.rho) + (Math.log10(b.rho)-Math.log10(a.rho))*t);
+    }
+  }
+
+  const tip = document.getElementById('vgeoTooltip');
+  tip.style.display='block';
+  tip.style.left = (e.clientX - rect.left)+'px';
+  tip.style.top = y+'px';
+  tip.textContent = `عمق ${depth.toFixed(1)} م · ρ≈${rho.toFixed(1)} Ω·m`;
+}
+
+function updateVgeoLegend(minRho, maxRho){
+  const canvas = document.getElementById('vgeoLegend');
+  if(!canvas) return;
+  const w=22, h=220;
+  const dpr = window.devicePixelRatio||1;
+  canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.height=h+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(vgeoMode==='layers'){
+    /* شرائح صلبة مطابقة للنطاقات الفعلية بدل تدرّج ناعم */
+    const n = vgeoBands.length;
+    vgeoBands.forEach((b,i)=>{
+      const y0 = h - ((i+1)/n)*h;
+      const y1 = h - (i/n)*h;
+      ctx.fillStyle = `rgb(${b.c[0]},${b.c[1]},${b.c[2]})`;
+      ctx.fillRect(0,y0,w,y1-y0);
+    });
+  } else {
+    for(let y=0;y<h;y++){
+      const t = 1-(y/h);
+      ctx.fillStyle = vgeoColorAt(t);
+      ctx.fillRect(0,y,w,1);
+    }
+  }
+  ctx.strokeStyle='rgba(8,24,64,.15)';
+  ctx.strokeRect(0.5,0.5,w-1,h-1);
+}
+
+/* ═══ GEO-ELECTRIC ═══ */
+function updateGeoSection(){
+  const cont=document.getElementById('geoBars'),sec=document.getElementById('geoSec');
+  if(!measurements.length){sec.style.display='none';return;}
+  sec.style.display='block';cont.innerHTML='';
+  const sorted=[...measurements].sort((a,b)=>a.depth-b.depth);
+  const maxD=sorted[sorted.length-1].depth,maxR=Math.max(...sorted.map(m=>m.rho),1),minR=Math.min(...sorted.map(m=>m.rho),1);
+  sorted.forEach(m=>{
+    const hp=Math.min(140,(m.depth/maxD)*120+20);
+    const ci=Math.min(0.95,(Math.log(m.rho)-Math.log(minR))/Math.max(.001,Math.log(maxR)-Math.log(minR)));
+    const r=Math.floor(20+200*ci),g=Math.floor(40+100*(1-ci)),b=Math.floor(210-160*ci);
+    const col=document.createElement('div');col.className='geo-col';
+    col.innerHTML=`<div class="geo-bar" style="height:${hp}px;background:rgb(${r},${g},${b});">
+      <div class="geo-tooltip">ρ=${m.rho.toFixed(1)} Ω·m</div></div>
+      <div class="geo-label">${m.depth.toFixed(1)}م</div>
+      <div class="geo-depth">${m.rock.substring(0,4)}</div>`;
+    cont.appendChild(col);
+  });
+}
+
+/* ═══ EXPORT ═══ */
+function exportXLSX(){
+  if(!measurements.length){alert('لا توجد قياسات');return;}
+
+  /* ── بيانات الجدول ── */
+  const headers = ['#','AB (م)','MN (م)','K','R (Ω)','ρ (Ω·m)','العمق (م)','نوع الصخر'];
+  const rows = measurements.map((m,i)=>[
+    i+1, m.ab, m.mn,
+    parseFloat(m.k.toFixed(3)),
+    m.measured,
+    parseFloat(m.rho.toFixed(2)),
+    parseFloat(m.depth.toFixed(2)),
+    m.rock
+  ]);
+
+  /* ── معلومات المشروع ── */
+  const info = [
+    ['المشروع', projNameI.value||'—'],
+    ['الاتجاه',  projDirI.value||'—'],
+    ['الإحداثيات', projCoordI.value||'—'],
+    ['الجيوفيزيائي', 'وسام حميد الشيخ'],
+    ['التاريخ', new Date().toLocaleString('ar-EG')],
+    [],
+    headers,
+    ...rows
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(info);
+
+  /* ── عرض الأعمدة ── */
+  ws['!cols'] = [
+    {wch:4},{wch:9},{wch:9},{wch:10},{wch:9},{wch:11},{wch:11},{wch:16}
+  ];
+
+  /* ── تنسيق رأس الجدول (الصف 8 = index 7) ── */
+  headers.forEach((_,ci)=>{
+    const addr = XLSX.utils.encode_cell({r:6, c:ci});
+    if(!ws[addr]) return;
+    ws[addr].s = {
+      font:{bold:true, color:{rgb:'FFFFFF'}},
+      fill:{fgColor:{rgb:'1148A8'}},
+      alignment:{horizontal:'center'}
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'قياسات SAS300');
+
+  const fname = (projNameI.value||'قياسات').replace(/\s/g,'_')+'_SAS300.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+function exportPDF(){
+  if(!measurements.length){alert('لا توجد قياسات');return;}
+
+  const proj   = projNameI.value || 'غير محدد';
+  const dir    = projDirI.value  || '—';
+  const coords = projCoordI.value|| '—';
+  const now    = new Date().toLocaleString('ar-EG');
+  const sorted = [...measurements].sort((a,b)=>a.depth-b.depth);
+  const rhos   = sorted.map(m=>m.rho);
+  const minRho = Math.min(...rhos).toFixed(1);
+  const maxRho = Math.max(...rhos).toFixed(1);
+  const avgRho = (rhos.reduce((a,b)=>a+b,0)/rhos.length).toFixed(1);
+  const waterLs = sorted.filter(m=>m.rho<150);
+  const drillTargets = rankDrillTargets(sorted);
+  const bestL  = waterLs.sort((a,b)=>a.rho-b.rho)[0];
+  const drillD = bestL ? Math.ceil(bestL.depth*1.4) : '—';
+  const notes  = (typeof projectNotes!=='undefined' && projectNotes.value) ? projectNotes.value : '';
+  const vgeoImg  = captureCanvasImage('vgeoCanvas');
+  const curveImg = captureCanvasImage('rhoChart');
+  const drillRowsPdf = drillTargets.map(t=>`
+    <div class="info-row"><span class="il">الحامل ${t.ordinal} — عمق ${t.depth.toFixed(1)} م (AB=${t.ab}م)</span><span class="iv">ρ=${t.rho.toFixed(1)} Ω·m → حفر عند ${t.drillDepth} م</span></div>`).join('');
+
+  const curveClass = classifyResistivityCurve(getCombinedAbPoints());
+  let curveType = curveClass.label;
+
+  const tableRows = sorted.map((m,i)=>{
+    let color;
+    if(m.rho<20) color='#0277bd';
+    else if(m.rho<60) color='#00838f';
+    else if(m.rho<150) color='#43a047';
+    else if(m.rho<400) color='#f59f00';
+    else color='#e03131';
+    return `<tr style="${i%2===0?'background:#f3f8ff;':''}">
+      <td>${i+1}</td><td>${m.ab}</td><td>${m.mn}</td>
+      <td>${m.k.toFixed(2)}</td><td>${m.measured}</td>
+      <td style="color:${color};font-weight:800;">${m.rho.toFixed(2)}</td>
+      <td>${m.depth.toFixed(2)}</td><td>${m.rock}</td><td>${m.time||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const win=window.open('','_blank','width=900,height=1000');
+  win.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>تقرير مقاومية — ${proj}</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Tajawal',sans-serif;background:#fff;color:#081840;font-size:11px;direction:rtl;padding:14px;}
+@page{size:A4;margin:15mm 12mm 15mm 12mm;}
+@media print{body{padding:0;}.no-print{display:none;}}
+
+.hdr{text-align:center;border-bottom:3px solid #1148a8;padding-bottom:12px;margin-bottom:16px;}
+.hdr h1{font-size:14px;font-weight:900;color:#0b1f50;}
+.hdr .sub{font-size:10px;color:#1148a8;font-weight:700;margin-top:3px;}
+.hdr .meta{font-size:9px;color:#5a7ab0;margin-top:2px;}
+.logo-bar{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px;}
+.logo-ico{width:40px;height:40px;background:linear-gradient(135deg,#0b1f50,#1148a8);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;}
+
+.section{border:1.5px solid #c2d9f8;border-radius:10px;margin-bottom:12px;overflow:hidden;break-inside:avoid;}
+.sec-hd{background:linear-gradient(90deg,#0b1f50,#1148a8);color:#fff;padding:6px 12px;font-size:10px;font-weight:800;}
+.sec-bd{padding:10px 12px;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.info-row{display:flex;padding:4px 0;border-bottom:1px solid #e8f2fd;font-size:10px;}
+.info-row:last-child{border-bottom:none;}
+.il{color:#5a7ab0;font-weight:700;min-width:110px;}
+.iv{color:#081840;font-weight:800;}
+
+.stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px;}
+.sbox{border:1px solid #c2d9f8;border-radius:8px;padding:6px 4px;text-align:center;background:#f3f8ff;}
+.sbl{font-size:8px;color:#5a7ab0;font-weight:700;margin-bottom:2px;}
+.sbv{font-size:11px;font-weight:900;color:#1148a8;}
+
+table.dtbl{width:100%;border-collapse:collapse;font-size:9.5px;}
+table.dtbl th{background:#1148a8;color:#fff;padding:6px 5px;font-weight:800;text-align:center;}
+table.dtbl td{padding:5px 5px;border-bottom:1px solid #e8f2fd;text-align:center;}
+
+.aquifer-box{background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:1.5px solid #a5d6a7;
+  border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:10px;color:#1b5e20;line-height:1.8;}
+.drill-big{text-align:center;background:linear-gradient(135deg,#0b1f50,#1148a8);
+  border-radius:10px;padding:12px;color:#fff;margin-bottom:10px;}
+.drill-big .dl{font-size:9px;color:rgba(255,255,255,.6);font-weight:700;}
+.drill-big .dv{font-size:28px;font-weight:900;}
+.drill-big .du{font-size:10px;color:#00bcd4;font-weight:800;}
+
+.notes-box{background:#fffde7;border:1px solid #ffe082;border-radius:8px;
+  padding:9px 11px;font-size:10px;color:#5d4037;line-height:1.8;min-height:32px;}
+.section img{max-width:100%;break-inside:avoid;}
+.footer{text-align:center;font-size:8.5px;color:#aaa;margin-top:14px;padding-top:10px;
+  border-top:1px solid #e8f2fd;}
+
+.no-print{margin-bottom:14px;display:flex;gap:10px;justify-content:center;}
+.no-print button{padding:9px 22px;border:none;border-radius:9px;font-family:'Tajawal';
+  font-size:12px;font-weight:800;cursor:pointer;}
+.btn-pr{background:linear-gradient(135deg,#0b1f50,#1148a8);color:#fff;}
+.btn-cl{background:#e8f2fd;color:#0b1f50;border:1.5px solid #c2d9f8;}
+</style>
+</head>
+<body>
+<div class="no-print">
+  <button class="btn-pr" onclick="window.print()">🖨️ طباعة</button>
+  <button class="btn-cl" onclick="window.close()">✕ إغلاق</button>
+</div>
+
+<div class="hdr">
+  <div class="logo-bar"><div class="logo-ico">⚡</div></div>
+  <h1>تقرير استكشاف المياه الجوفية بالمقاومية الكهربائية</h1>
+  <div class="sub">المؤسسة العامة للجيولوجيا والثروة المعدنية — دائرة الجيوفيزياء</div>
+  <div class="meta">جهاز SAS 300 · ABEM · تشكيل شلمبرجير | الجيوفيزيائي: وسام حميد الشيخ | ${now}</div>
+</div>
+
+<div class="section">
+  <div class="sec-hd">🗂 معلومات المشروع</div>
+  <div class="sec-bd">
+    <div class="info-row"><span class="il">اسم المشروع</span><span class="iv">${proj}</span></div>
+    <div class="info-row"><span class="il">الاتجاه</span><span class="iv">${dir}</span></div>
+    <div class="info-row"><span class="il">الإحداثيات (GPS)</span><span class="iv">${coords}</span></div>
+    <div class="info-row"><span class="il">الجيوفيزيائي</span><span class="iv">وسام حميد الشيخ</span></div>
+    <div class="info-row"><span class="il">الجهاز المستخدم</span><span class="iv">SAS 300 ABEM — تشكيل شلمبرجير</span></div>
+    <div class="info-row"><span class="il">تاريخ الرفع</span><span class="iv">${now}</span></div>
+    <div class="info-row"><span class="il">نوع المنحنى الكهربائي</span><span class="iv">${curveType}</span></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-hd">📊 ملخص إحصائي للقياسات</div>
+  <div class="sec-bd">
+    <div class="stats-row">
+      <div class="sbox"><div class="sbl">عدد القياسات</div><div class="sbv">${sorted.length}</div></div>
+      <div class="sbox"><div class="sbl">أقصى عمق (م)</div><div class="sbv">${sorted[sorted.length-1]?.depth.toFixed(1)||'—'}</div></div>
+      <div class="sbox"><div class="sbl">أدنى ρ (Ω·m)</div><div class="sbv" style="color:#0277bd;">${minRho}</div></div>
+      <div class="sbox"><div class="sbl">أعلى ρ (Ω·m)</div><div class="sbv" style="color:#e03131;">${maxRho}</div></div>
+      <div class="sbox"><div class="sbl">متوسط ρ (Ω·m)</div><div class="sbv" style="color:#7b40c2;">${avgRho}</div></div>
+      <div class="sbox"><div class="sbl">طبقات مائية</div><div class="sbv" style="color:#00838f;">${waterLs.length}</div></div>
+    </div>
+  </div>
+</div>
+
+${drillTargets.length ? `
+<div class="section">
+  <div class="sec-hd">💧 توصية الحفر — الحوامل المائية مرتّبة حسب انخفاض المقاومية</div>
+  <div class="sec-bd">
+    <div class="drill-big">
+      <div class="dl">الحفر أولاً عند الحامل ${drillTargets[0].ordinal}</div>
+      <div class="dv">${drillTargets[0].drillDepth}</div>
+      <div class="du">متر</div>
+    </div>
+    ${drillRowsPdf}
+    <div class="aquifer-box" style="margin-top:8px;">
+      ✅ <strong>يوصى بالحفر على عمق الحامل ${drillTargets[0].ordinal}</strong>، ثم الحامل ${drillTargets[1]?drillTargets[1].ordinal:'التالي'} فما يليه حسب الترتيب أعلاه عند الحاجة.<br>
+      • عدد الحوامل المائية المرشّحة: <strong>${drillTargets.length}</strong><br>
+      ⚠️ هذا التقدير للاسترشاد فقط — لا يُعوّض الدراسة التفصيلية.
+    </div>
+  </div>
+</div>` : ''}
+
+${(vgeoImg || curveImg) ? `
+<div class="section">
+  <div class="sec-hd">📐 المقطع الجيوكهربائي والمنحني</div>
+  <div class="sec-bd">
+    ${vgeoImg ? `<div style="margin-bottom:10px;"><div style="font-size:9.5px;font-weight:800;color:#1e3d78;margin-bottom:5px;">المقطع الجيوكهربائي الرأسي</div><img src="${vgeoImg}" style="width:100%;border-radius:8px;border:1px solid #c2d9f8;"/></div>` : ''}
+    ${curveImg ? `<div><div style="font-size:9.5px;font-weight:800;color:#1e3d78;margin-bottom:5px;">منحني المقاومية الظاهرية</div><img src="${curveImg}" style="width:100%;border-radius:8px;border:1px solid #c2d9f8;"/></div>` : ''}
+  </div>
+</div>` : ''}
+
+<div class="section">
+  <div class="sec-hd">🪨 جدول القياسات الكامل</div>
+  <div class="sec-bd" style="padding:0;">
+    <table class="dtbl">
+      <thead><tr><th>#</th><th>AB(م)</th><th>MN(م)</th><th>K</th><th>R(Ω)</th><th>ρ(Ω·m)</th><th>عمق(م)</th><th>الصخر</th><th>الوقت</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <div class="sec-hd">📝 ملاحظات الجيوفيزيائي</div>
+  <div class="sec-bd">
+    <div class="notes-box">${notes || 'لا توجد ملاحظات مدخلة'}</div>
+  </div>
+</div>
+
+<div class="footer">
+  © وسام حميد الشيخ — المؤسسة العامة للجيولوجيا والثروة المعدنية — دائرة الجيوفيزياء — SAS300 v2.9
+</div>
+</body></html>`);
+  win.document.close();
+}
+
+function clearAll(){
+  if(!confirm('مسح جميع القياسات؟'))return;
+  measurements=[];manualVgeoBounds=[];updateTable();updateStats();updateChartData();updateGeoSection();updateAbChart();updateAquiferBreaks();updateVerticalGeoSection();saveLS();
+}
+
+/* ═══ STORAGE ═══ */
+function saveLS(){
+  localStorage.setItem('SAS300_v4',JSON.stringify({
+    name:projNameI.value,dir:projDirI.value,coord:projCoordI.value,
+    measurements,notes:projectNotes.value,
+    currentPairIndex, wells, importedAbData, abScaleMode, manualVgeoBounds,
+    ts:new Date().toISOString()
+  }));
+}
+function loadLS(){
+  let s=localStorage.getItem('SAS300_v4');if(!s)return;
+  let d=JSON.parse(s);
+  projNameI.value=d.name||'';projDirI.value=d.dir||'';projCoordI.value=d.coord||'';
+  measurements=d.measurements||[];measurements.sort((a,b)=>a.depth-b.depth);
+  projectNotes.value=d.notes||'';
+  wells=d.wells||[];
+  importedAbData=d.importedAbData||[];
+  abScaleMode=d.abScaleMode||'log';
+  manualVgeoBounds=Array.isArray(d.manualVgeoBounds)?d.manualVgeoBounds:[];
+  if(typeof d.currentPairIndex === 'number') currentPairIndex = d.currentPairIndex;
+  updateTable();updateStats();updateChartData();updateGeoSection();
+  renderWells();
+  
+  updateAbChart();
+  updateAquiferBreaks();
+  updateVerticalGeoSection();
+  document.getElementById('abScaleLogBtn').classList.toggle('on', abScaleMode==='log');
+  document.getElementById('abScaleLinBtn').classList.toggle('on', abScaleMode==='lin');
+  displayCurrentPair();
+}
+function saveCurrentProject(){saveLS();alert('تم الحفظ في المتصفح ✓');}
+
+/* تصدير المشروع كملف JSON قابل للتنزيل */
+function exportProjectFile(){
+  saveLS();
+  const data = {
+    name:projNameI.value, dir:projDirI.value, coord:projCoordI.value,
+    measurements, notes:projectNotes.value,
+    currentPairIndex, wells, importedAbData, abScaleMode, manualVgeoBounds,
+    ts:new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const safeName = (projNameI.value||'مشروع_SAS300').replace(/[^\w\u0600-\u06FF-]+/g,'_');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${safeName}_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+/* حفظ محلي + تنزيل ملف المشروع + فتح Google Drive لرفعه يدوياً
+   (المتصفح لا يسمح برفع ملفات تلقائياً لحساب المستخدم على Drive دون
+   ربط حقيقي بحساب Google؛ هذا هو المسار العملي الآمن بخطوتين). */
+function saveAndUploadDrive(){
+  exportProjectFile();
+  const modal = document.createElement('div');
+  modal.id = 'driveHintModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(5,18,46,.82);
+    display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:env(safe-area-inset-bottom,0);
+  `;
+  modal.innerHTML = `
+    <div style="
+      background:#fff;width:100%;max-width:480px;
+      border-radius:22px 22px 0 0;padding:22px 18px 28px;
+      box-shadow:0 -8px 40px rgba(5,18,46,.28);
+      font-family:'Tajawal',sans-serif;
+    ">
+      <div style="width:40px;height:4px;background:#e0e0e0;border-radius:4px;margin:0 auto 18px;"></div>
+      <div style="font-size:.95rem;font-weight:900;color:#0b1f50;margin-bottom:10px;">☁️ تم تنزيل ملف المشروع</div>
+      <div style="font-size:.74rem;color:#1e3d78;margin-bottom:16px;line-height:1.8;background:#f3f8ff;padding:12px 13px;border-radius:12px;border:1px solid #c2d9f8;">
+        1️⃣ تم حفظ ملف المشروع (JSON) في مجلد التنزيلات على جهازك.<br>
+        2️⃣ اضغط الزر أدناه لفتح Google Drive.<br>
+        3️⃣ اضغط "+ جديد" ← "رفع ملف" واختر الملف الذي نزل للتو.
+      </div>
+      <a href="https://drive.google.com/drive/my-drive" target="_blank"
+        style="display:block;text-align:center;padding:13px;margin-bottom:12px;
+        background:linear-gradient(135deg,#1148a8,#3a82e8);border-radius:13px;
+        font-size:.82rem;font-weight:900;color:#fff;text-decoration:none;">
+        🗂️ فتح Google Drive
+      </a>
+      <button onclick="document.getElementById('driveHintModal').remove()"
+        style="width:100%;height:44px;border:1.5px solid #c2d9f8;border-radius:13px;
+        background:#f3f8ff;color:#1e3d78;
+        font-family:'Tajawal';font-size:.8rem;font-weight:800;cursor:pointer;">
+        إغلاق
+      </button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+}
+
+function showLoadProjectDialog(){
+  let inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    let f=e.target.files[0];if(!f)return;
+    let r=new FileReader();r.onload=ev=>{
+      try{
+        let d=JSON.parse(ev.target.result);
+        projNameI.value=d.name||'';projDirI.value=d.dir||d.direction||'';projCoordI.value=d.coord||d.coordinates||'';
+        if(d.measurements){
+          measurements=d.measurements;measurements.sort((a,b)=>a.depth-b.depth);
+          projectNotes.value=d.notes||'';
+          if(typeof d.currentPairIndex==='number') currentPairIndex=d.currentPairIndex;
+          updateTable();updateStats();updateChartData();updateGeoSection();
+          displayCurrentPair();saveLS();alert('تم الفتح ✓');
+        }else alert('ملف غير صالح');
+      }catch{alert('خطأ في القراءة');}
+    };r.readAsText(f);
+  };inp.click();
+}
+
+/* ═══ REF TABLE ═══ */
+function buildRef(){
+  let tb=document.getElementById('refTbody');tb.innerHTML='';
+  calibrationData.forEach(d=>{
+    let r=tb.insertRow();
+    [d.ab,d.mn,d.k.toFixed(2),(d.ab/3).toFixed(2)].forEach(v=>{r.insertCell(-1).innerText=v;});
+  });
+}
+
+/* ═══════════════════════════════════════
+   WAKE LOCK — إبقاء الشاشة مضاءة
+═══════════════════════════════════════ */
+let _wakeLock = null;
+async function toggleWakeLock(){
+  const btn = document.getElementById('wakeLockBtn');
+  const ico = document.getElementById('wakeLockIco');
+  const txt = document.getElementById('wakeLockTxt');
+  if(_wakeLock){
+    await _wakeLock.release();
+    _wakeLock = null;
+    btn.classList.remove('wl-active');
+    ico.textContent = '🌙';
+    txt.textContent = 'تفعيل إبقاء الشاشة مضاءة';
+  } else {
+    try{
+      _wakeLock = await navigator.wakeLock.request('screen');
+      btn.classList.add('wl-active');
+      ico.textContent = '☀️';
+      txt.textContent = 'الشاشة مضاءة دائماً — اضغط لإيقاف';
+      _wakeLock.addEventListener('release',()=>{
+        _wakeLock=null;
+        btn.classList.remove('wl-active');
+        ico.textContent='🌙';
+        txt.textContent='تفعيل إبقاء الشاشة مضاءة';
+      });
+    } catch(e){
+      showToast('⚠️ Wake Lock غير مدعوم في هذا المتصفح');
+    }
+  }
+}
+/* أعد تفعيل Wake Lock عند العودة للتطبيق */
+document.addEventListener('visibilitychange',async()=>{
+  if(_wakeLock && document.visibilityState==='visible'){
+    try{ _wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+  }
+});
+
+/* ═══════════════════════════════════════
+   BEEP — صوت تأكيد القياس
+═══════════════════════════════════════ */
+function playBeep(){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880;
+    o.type = 'sine';
+    g.gain.setValueAtTime(0.18, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.18);
+  } catch(e){}
+}
+
+/* ═══════════════════════════════════════
+   AUTO BACKUP — نسخ احتياطي تلقائي
+═══════════════════════════════════════ */
+function autoBackup(){
+  const data = JSON.stringify({
+    name:projNameI.value, dir:projDirI.value, coord:projCoordI.value,
+    measurements, notes:projectNotes.value,
+    currentPairIndex, wells,
+    ts: new Date().toISOString()
+  });
+  const blob = new Blob([data],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backup_'+(projNameI.value||'project').replace(/\s/g,'_')+'_'+measurements.length+'readings.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  showToast('💾 نسخة احتياطية تلقائية — '+measurements.length+' قياس');
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function showToast(msg){
+  let t = document.getElementById('backupToast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'backupToast';
+    t.className = 'backup-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+/* ═══════════════════════════════════════
+   GPS
+═══════════════════════════════════════ */
+let _gpsTarget = null; /* الحقل المستهدف */
+
+function getGPS(targetField, btnEl){
+  _gpsTarget = targetField || document.getElementById('projCoords');
+  const btn = btnEl || document.getElementById('gpsBtn');
+  /* حالة المشروع تملك عنصر حالة مخصص؛ لباقي الحقول (مثل البئر) نبني واحدًا مؤقتًا بجانب الزر */
+  const statusEl = document.getElementById('gpsStatus');
+  const isProjField = _gpsTarget && _gpsTarget.id === 'projCoords';
+
+  /* تشخيص مسبق: الأسباب الأكثر شيوعًا لفشل GPS قبل حتى محاولة الطلب */
+  const isSecure = window.isSecureContext !== false; /* https أو localhost */
+  if(!navigator.geolocation){
+    showGpsManual('المتصفح لا يدعم تحديد الموقع — أدخل الإحداثيات يدوياً');
+    return;
+  }
+  if(!isSecure){
+    showGpsManual('يجب فتح الصفحة عبر رابط https:// (أو تطبيق مثبّت) — متصفحات الجوال تمنع تحديد الموقع عند فتح الملف مباشرة من الذاكرة (file://) أو عبر http:// غير آمن.');
+    return;
+  }
+
+  if(btn){btn.dataset.orig = btn.dataset.orig || btn.innerHTML; btn.classList.add('loading');btn.innerHTML='⏳ جاري...';btn.disabled=true;}
+  if(isProjField && statusEl){statusEl.style.display='block';statusEl.style.color='var(--tx3)';statusEl.textContent='⏳ جاري تحديد الموقع...';}
+
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const acc = pos.coords.accuracy.toFixed(0);
+      const val = `${lat}, ${lng}`;
+      if(_gpsTarget) _gpsTarget.value = val;
+      if(isProjField && statusEl){statusEl.textContent=`✅ تم التحديد — دقة ${acc} متر`;statusEl.style.color='var(--green)';}
+      if(btn){btn.classList.remove('loading');btn.innerHTML=btn.dataset.orig||'📡 موقعي';btn.disabled=false;}
+      _gpsTarget = null;
+      saveLS();
+    },
+    err=>{
+      if(btn){btn.classList.remove('loading');btn.innerHTML=btn.dataset.orig||'📡 موقعي';btn.disabled=false;}
+      if(isProjField && statusEl){statusEl.style.display='none';}
+      const reasons = {
+        1:'رُفض إذن الموقع — افتح إعدادات المتصفح/التطبيق وفعّل إذن الموقع لهذه الصفحة، ثم أعد المحاولة.',
+        2:'تعذّر تحديد الموقع حالياً — تأكد أن خدمة الموقع (GPS) مفعّلة في الجهاز وأنك في مكان مفتوح.',
+        3:'انتهت مهلة الانتظار — قد تكون الإشارة ضعيفة، جرّب مكاناً مفتوحاً أو أعد المحاولة.'
+      };
+      showGpsManual(reasons[err.code] || err.message);
+    },
+    {enableHighAccuracy:true, timeout:14000, maximumAge:0}
+  );
+}
+
+function getGPSWell(){
+  getGPS(document.getElementById('wCoords'), event ? event.currentTarget : null);
+}
+
+/* فتح الإحداثيات الحالية على خرائط جوجل للتحقق البصري السريع */
+/* يستخرج {lat,lon} من نص إحداثيات حر، أو null إن لم يوجد */
+function parseCoordsStr(raw){
+  const val = (raw||'').trim();
+  const m = val.match(/(-?\d+(?:\.\d+)?)\s*[,°NnSs]*\s*[,]\s*(-?\d+(?:\.\d+)?)/);
+  if(!m) return null;
+  const lat = parseFloat(m[1]), lon = parseFloat(m[2]);
+  if(isNaN(lat)||isNaN(lon)||lat<-90||lat>90||lon<-180||lon>180) return null;
+  return {lat, lon};
+}
+
+function viewCoordsOnMap(raw){
+  const c = parseCoordsStr(raw);
+  if(!c){
+    alert('لا توجد إحداثيات صالحة بعد — استخدم زر 📡 موقعي أولاً أو أدخلها يدوياً.');
+    return;
+  }
+  window.open(`https://www.google.com/maps?q=${c.lat},${c.lon}`, '_blank');
+}
+
+/* ═══════════════════════════════════════
+   FIELD MAP — خريطة تجمع نقطة المشروع وكل الآبار
+═══════════════════════════════════════ */
+let _fieldMap = null;
+let _fieldMapMarkers = [];
+
+function renderFieldMap(forceRefit){
+  const container = document.getElementById('fieldMapEl');
+  const statusEl = document.getElementById('fieldMapList');
+  const noteEl = document.getElementById('fieldMapStatus');
+  if(!container) return;
+
+  if(typeof L === 'undefined'){
+    if(noteEl){noteEl.style.color='#e03131';noteEl.textContent='⚠️ تعذّر تحميل مكتبة الخريطة — تحتاج اتصالاً بالإنترنت مرة واحدة على الأقل.';}
+    return;
+  }
+
+  /* اجمع كل النقاط: المشروع الحالي + كل الآبار */
+  const points = [];
+  const projVal = (document.getElementById('projCoords')||{}).value || '';
+  const projName = (document.getElementById('projName')||{}).value.trim() || 'المشروع الحالي';
+  const projC = parseCoordsStr(projVal);
+  if(projC) points.push({...projC, name:`📍 ${projName}`, kind:'project'});
+
+  wells.forEach(w=>{
+    const c = parseCoordsStr(w.coords);
+    if(c) points.push({...c, name:`🪣 ${w.name}`, kind:'well', well:w});
+  });
+
+  if(points.length === 0){
+    if(noteEl){noteEl.style.color='var(--tx3)';noteEl.textContent='لا توجد نقاط تملك إحداثيات صالحة بعد.';}
+    statusEl.innerHTML = '<div class="no-wells">لا توجد نقاط بعد — أضف إحداثيات المشروع أو آبار</div>';
+    return;
+  }
+  if(noteEl){noteEl.style.color='var(--tx3)';noteEl.textContent=`عدد النقاط المعروضة: ${points.length}`;}
+
+  /* تهيئة الخريطة أول مرة فقط */
+  if(!_fieldMap){
+    _fieldMap = L.map(container, {zoomControl:true}).setView([points[0].lat, points[0].lon], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(_fieldMap);
+  }
+
+  /* أزل العلامات القديمة وأعد رسمها */
+  _fieldMapMarkers.forEach(mk=>_fieldMap.removeLayer(mk));
+  _fieldMapMarkers = [];
+
+  points.forEach(p=>{
+    const color = p.kind==='project' ? '#1148a8' : '#00838f';
+    const marker = L.circleMarker([p.lat, p.lon], {
+      radius: 9, color:'#fff', weight:2, fillColor: color, fillOpacity:0.9
+    }).addTo(_fieldMap);
+    let popupHtml = `<div style="font-family:'Tajawal',sans-serif;text-align:right;direction:rtl;">
+      <b>${p.name}</b><br>${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}`;
+    if(p.kind==='well' && p.well){
+      popupHtml += `<br>عمق: ${p.well.depth||'—'} م · غزارة: ${p.well.flow||'—'} م³/س`;
+    }
+    popupHtml += `</div>`;
+    marker.bindPopup(popupHtml);
+    _fieldMapMarkers.push(marker);
+  });
+
+  if(forceRefit || points.length > 1){
+    const bounds = L.latLngBounds(points.map(p=>[p.lat, p.lon]));
+    _fieldMap.fitBounds(bounds, {padding:[30,30], maxZoom:16});
+  } else {
+    _fieldMap.setView([points[0].lat, points[0].lon], 14);
+  }
+
+  setTimeout(()=>_fieldMap.invalidateSize(), 100);
+
+  /* قائمة نصية أسفل الخريطة */
+  statusEl.innerHTML = points.map(p=>`
+    <div class="well-card" style="cursor:pointer;" onclick="_fieldMap && _fieldMap.setView([${p.lat},${p.lon}], 16)">
+      <div class="wn">${p.name}</div>
+      <div style="font-size:.62rem;color:var(--tx3);margin-top:3px;">${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}${p.kind==='well'&&p.well?` · عمق ${p.well.depth||'—'} م`:''}</div>
+    </div>`).join('');
+}
+
+function showGpsManual(reason){
+  /* إنشاء نافذة إدخال يدوي */
+  const old = document.getElementById('gpsManualModal');
+  if(old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'gpsManualModal';
+  modal.style.cssText = `
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(5,18,46,.82);
+    display:flex;align-items:flex-end;justify-content:center;
+    padding-bottom:env(safe-area-inset-bottom,0);
+  `;
+  modal.innerHTML = `
+    <div style="
+      background:#fff;width:100%;max-width:480px;
+      border-radius:22px 22px 0 0;padding:22px 18px 28px;
+      box-shadow:0 -8px 40px rgba(5,18,46,.28);
+      font-family:'Tajawal',sans-serif;
+    ">
+      <div style="width:40px;height:4px;background:#e0e0e0;border-radius:4px;margin:0 auto 18px;"></div>
+      <div style="font-size:.95rem;font-weight:900;color:#0b1f50;margin-bottom:6px;">📍 إدخال الموقع</div>
+      <div style="font-size:.7rem;color:#e03131;margin-bottom:14px;background:#fff5f5;padding:8px 11px;border-radius:10px;border:1px solid #ffc9c9;">
+        ⚠️ ${reason}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;">
+        <div>
+          <div style="font-size:.65rem;font-weight:700;color:#1e3d78;margin-bottom:5px;">خط العرض (Lat)</div>
+          <input id="gpsManLat" type="number" step="any" placeholder="مثال: 33.510000"
+            style="width:100%;height:42px;border:1.5px solid #c2d9f8;border-radius:11px;
+            padding:0 10px;font-family:'Tajawal';font-size:.82rem;color:#081840;text-align:center;">
+        </div>
+        <div>
+          <div style="font-size:.65rem;font-weight:700;color:#1e3d78;margin-bottom:5px;">خط الطول (Lon)</div>
+          <input id="gpsManLon" type="number" step="any" placeholder="مثال: 36.290000"
+            style="width:100%;height:42px;border:1.5px solid #c2d9f8;border-radius:11px;
+            padding:0 10px;font-family:'Tajawal';font-size:.82rem;color:#081840;text-align:center;">
+        </div>
+      </div>
+
+      <a href="https://www.google.com/maps/@?api=1&map_action=map" target="_blank"
+        style="display:block;text-align:center;padding:10px;margin-bottom:12px;
+        background:#e8f5e9;border:1px solid #a5d6a7;border-radius:12px;
+        font-size:.72rem;font-weight:800;color:#2e7d32;text-decoration:none;">
+        🗺️ افتح خرائط Google — اضغط مطوّلاً على موقعك لنسخ الإحداثيات
+      </a>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+        <button onclick="applyManualGPS()"
+          style="height:46px;border:none;border-radius:13px;
+          background:linear-gradient(135deg,#1148a8,#3a82e8);
+          color:#fff;font-family:'Tajawal';font-size:.82rem;font-weight:900;cursor:pointer;">
+          ✅ تأكيد
+        </button>
+        <button onclick="document.getElementById('gpsManualModal').remove()"
+          style="height:46px;border:1.5px solid #c2d9f8;border-radius:13px;
+          background:#f3f8ff;color:#1e3d78;
+          font-family:'Tajawal';font-size:.82rem;font-weight:800;cursor:pointer;">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  /* أغلق عند الضغط على الخلفية */
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+  /* فوكس على خط العرض */
+  setTimeout(()=>{ const el=document.getElementById('gpsManLat'); if(el) el.focus(); }, 200);
+}
+
+function applyManualGPS(){
+  const lat = parseFloat(document.getElementById('gpsManLat').value);
+  const lon = parseFloat(document.getElementById('gpsManLon').value);
+  if(isNaN(lat)||isNaN(lon)){
+    alert('أدخل قيمتين صحيحتين');return;
+  }
+  if(lat<-90||lat>90||lon<-180||lon>180){
+    alert('الإحداثيات خارج النطاق الصحيح');return;
+  }
+  const val = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  const field = _gpsTarget || document.getElementById('projCoords');
+  if(field) field.value = val;
+
+  const statusEl = document.getElementById('gpsStatus');
+  if(statusEl){statusEl.style.display='block';statusEl.style.color='var(--green)';statusEl.textContent='✅ تم إدخال الإحداثيات يدوياً';}
+
+  document.getElementById('gpsManualModal').remove();
+  _gpsTarget = null;
+  saveLS();
+}
+
+/* ═══════════════════════════════════════
+   WELLS DATABASE
+═══════════════════════════════════════ */
+function addWell(){
+  const name = document.getElementById('wName').value.trim();
+  if(!name){alert('أدخل اسم البئر');return;}
+  const well = {
+    id: Date.now(),
+    name,
+    area:   document.getElementById('wArea').value.trim(),
+    depth:  parseFloat(document.getElementById('wDepth').value)||0,
+    flow:   parseFloat(document.getElementById('wFlow').value)||0,
+    level:  parseFloat(document.getElementById('wLevel').value)||0,
+    year:   parseInt(document.getElementById('wYear').value)||'',
+    rock:   document.getElementById('wRock').value,
+    coords: document.getElementById('wCoords').value.trim(),
+    notes:  document.getElementById('wNotes').value.trim(),
+    ts: new Date().toLocaleDateString('ar-EG')
+  };
+  wells.push(well);
+  saveLS();
+  renderWells();
+  /* Clear form */
+  ['wName','wArea','wDepth','wFlow','wLevel','wYear','wCoords','wNotes'].forEach(id=>{
+    document.getElementById(id).value='';
+  });
+}
+
+function deleteWell(id){
+  if(!confirm('حذف هذه البئر؟'))return;
+  wells=wells.filter(w=>w.id!==id);
+  saveLS();renderWells();
+}
+
+function renderWells(){
+  const list = document.getElementById('wellsList');
+  const cnt  = document.getElementById('wellsCount');
+  cnt.textContent = wells.length + ' بئر';
+  if(!wells.length){
+    list.innerHTML='<div class="no-wells">🪣 لا توجد آبار مسجلة بعد</div>';
+    return;
+  }
+  list.innerHTML = wells.map(w=>`
+    <div class="well-card">
+      <button class="well-del" onclick="deleteWell(${w.id})">✕</button>
+      <div class="wn">🪣 ${w.name}${w.area?' — '+w.area:''}</div>
+      <div class="wg">
+        <div><div class="wgi">العمق (م)</div><div class="wgv">${w.depth||'—'}</div></div>
+        <div><div class="wgi">الغزارة م³/ساعة</div><div class="wgv">${w.flow||'—'}</div></div>
+        <div><div class="wgi">منسوب الماء</div><div class="wgv">${w.level||'—'}</div></div>
+        <div><div class="wgi">نوع الصخر</div><div class="wgv">${w.rock||'—'}</div></div>
+        <div><div class="wgi">سنة الحفر</div><div class="wgv">${w.year||'—'}</div></div>
+        <div><div class="wgi">إحداثيات</div><div class="wgv" style="font-size:.6rem;">${w.coords||'—'}</div></div>
+      </div>
+      ${w.notes?`<div style="margin-top:7px;font-size:.65rem;color:var(--tx3);">📝 ${w.notes}</div>`:''}
+      <div style="margin-top:5px;font-size:.58rem;color:var(--tx3);">تاريخ الإدخال: ${w.ts}</div>
+    </div>`).join('');
+}
+
+function exportWellsXLSX(){
+  if(!wells.length){alert('لا توجد آبار مسجلة');return;}
+
+  const headers = ['اسم البئر','المنطقة','العمق (م)','الغزارة (م³/ساعة)','منسوب الماء (م)','نوع الصخر','سنة الحفر','الإحداثيات','ملاحظات'];
+  const rows = wells.map(w=>[
+    w.name, w.area,
+    w.depth||0, w.flow||0, w.level||0,
+    w.rock, w.year||'',
+    w.coords, w.notes
+  ]);
+
+  const data = [
+    ['قاعدة بيانات الآبار — '+(projNameI.value||'SAS300')],
+    ['تاريخ التصدير', new Date().toLocaleString('ar-EG')],
+    [],
+    headers,
+    ...rows
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  /* عرض الأعمدة */
+  ws['!cols'] = [
+    {wch:18},{wch:16},{wch:11},{wch:16},{wch:15},{wch:14},{wch:12},{wch:22},{wch:22}
+  ];
+
+  /* لون رأس الجدول (الصف 4 = index 3) */
+  headers.forEach((_,ci)=>{
+    const addr = XLSX.utils.encode_cell({r:3, c:ci});
+    if(!ws[addr]) return;
+    ws[addr].s = {
+      font:{bold:true, color:{rgb:'FFFFFF'}},
+      fill:{fgColor:{rgb:'005040'}},
+      alignment:{horizontal:'center'}
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'الآبار');
+
+  const fname = 'آبار_'+(projNameI.value||'مشروع').replace(/\s/g,'_')+'.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+/* ═══════════════════════════════════════
+   LITHO COLUMN
+═══════════════════════════════════════ */
+function loadLithoImage(event){
+  const file = event.target.files[0];
+  if(!file)return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const dataUrl = e.target.result;
+    showLithoImage(dataUrl);
+    localStorage.setItem('SAS300_litho', dataUrl);
+    saveLithoLS();
+  };
+  reader.readAsDataURL(file);
+}
+
+function showLithoImage(src){
+  document.getElementById('lithoImg').src = src;
+  document.getElementById('lithoUploadArea').style.display = 'none';
+  document.getElementById('lithoImgWrap').style.display = 'block';
+  document.getElementById('lithoCaptionBox').style.display = 'block';
+  document.getElementById('lithoLegend').style.display  = 'block';
+}
+
+function clearLitho(){
+  if(!confirm('حذف صورة العمود الليتولوجي؟'))return;
+  document.getElementById('lithoImg').src = '';
+  document.getElementById('lithoUploadArea').style.display = 'block';
+  document.getElementById('lithoImgWrap').style.display = 'none';
+  document.getElementById('lithoCaptionBox').style.display = 'none';
+  document.getElementById('lithoLegend').style.display  = 'none';
+  document.getElementById('lithoFileInput').value = '';
+  localStorage.removeItem('SAS300_litho');
+  localStorage.removeItem('SAS300_litho_meta');
+}
+
+function saveLithoLS(){
+  const meta={
+    caption: document.getElementById('lithoCaption').value,
+    layers:  document.getElementById('lithoLayers').value
+  };
+  localStorage.setItem('SAS300_litho_meta', JSON.stringify(meta));
+}
+
+function loadLithoLS(){
+  const img = localStorage.getItem('SAS300_litho');
+  if(img) showLithoImage(img);
+  const raw = localStorage.getItem('SAS300_litho_meta');
+  if(raw){
+    try{
+      const m = JSON.parse(raw);
+      document.getElementById('lithoCaption').value = m.caption||'';
+      document.getElementById('lithoLayers').value  = m.layers||'';
+    }catch(e){}
+  }
+}
+
+/* ═══════════════════════════════════════
+   AQUIFER ASSESSMENT
+═══════════════════════════════════════ */
+/* ═══════════════════════════════════════
+   PRINT REPORT
+═══════════════════════════════════════ */
+function openPrintReport(){
+  buildReportHTML();
+  document.getElementById('rptOverlay').style.display='flex';
+}
+function closePrintReport(){
+  document.getElementById('rptOverlay').style.display='none';
+}
+
+/* ترتيب الحوامل المائية المرشّحة للحفر حسب انخفاض المقاومية (الأول = الأدنى مقاومية = الأفضل) */
+function rankDrillTargets(sorted){
+  const waterLs = sorted.filter(m=>m.rho<150);
+  const ranked  = [...waterLs].sort((a,b)=>a.rho-b.rho);
+  const ORDINALS = ['الأول','الثاني','الثالث','الرابع','الخامس','السادس','السابع','الثامن'];
+  return ranked.map((m,i)=>({
+    ordinal: ORDINALS[i] || `#${i+1}`,
+    depth: m.depth,
+    rho: m.rho,
+    drillDepth: Math.ceil(m.depth*1.4),
+    ab: m.ab
+  }));
+}
+
+/* التقاط صورة من canvas كـ base64 (يُعيد null إذا لم يكن الرسم متاحاً بعد) */
+function captureCanvasImage(canvasId){
+  try{
+    const c = document.getElementById(canvasId);
+    if(!c || !c.width || !c.height) return null;
+    return c.toDataURL('image/png', 1.0);
+  }catch(e){ return null; }
+}
+
+function buildReportHTML(){
+  const body = document.getElementById('rptBody');
+  const proj = projNameI.value || 'غير محدد';
+  const dir  = projDirI.value  || '—';
+  const coords = projCoordI.value || '—';
+  const now  = new Date().toLocaleString('ar-EG');
+  const mCnt = measurements.length;
+
+  /* تحليل البيانات */
+  const sorted = mCnt > 0 ? [...measurements].sort((a,b)=>a.depth-b.depth) : [];
+  const rhos   = sorted.map(m=>m.rho);
+  const minRho = mCnt > 0 ? Math.min(...rhos).toFixed(1) : '—';
+  const maxRho = mCnt > 0 ? Math.max(...rhos).toFixed(1) : '—';
+  const avgRho = mCnt > 0 ? (rhos.reduce((a,b)=>a+b,0)/mCnt).toFixed(1) : '—';
+  const maxDepth = mCnt > 0 ? sorted[sorted.length-1].depth.toFixed(1) : '—';
+
+  const waterLs = sorted.filter(m=>m.rho<150);
+  const drillTargets = rankDrillTargets(sorted);
+  const bestL   = waterLs.sort((a,b)=>a.rho-b.rho)[0];
+  const drillD  = bestL ? Math.ceil(bestL.depth*1.4) : '—';
+
+  /* تصنيف الطبقات */
+  const layerRows = sorted.slice(0,8).map(m=>{
+    let color, label;
+    if(m.rho < 20)       { color='#0277bd'; label='مياه جوفية عالية'; }
+    else if(m.rho < 60)  { color='#00838f'; label='تشبع جيد'; }
+    else if(m.rho < 150) { color='#43a047'; label='رطوبة معتدلة'; }
+    else if(m.rho < 400) { color='#f59f00'; label='جاف نسبياً'; }
+    else                  { color='#e03131'; label='جاف / مقاومة عالية'; }
+    return `<div class="rpt-row">
+      <span class="rl">عمق ${m.depth.toFixed(1)} م (AB=${m.ab}م)</span>
+      <span class="rv" style="display:flex;align-items:center;gap:6px;">
+        <span style="width:9px;height:9px;border-radius:50%;background:${color};display:inline-block;"></span>
+        ${m.rho.toFixed(1)} Ω·m — ${label}
+      </span>
+    </div>`;
+  }).join('');
+
+  /* ملاحظات الجيوفيزيائي */
+  const notes = (typeof projectNotes !== 'undefined' && projectNotes.value) ? projectNotes.value : '';
+
+  /* نوع المنحنى — تصنيف حقيقي مبني على تتابع ميول القطع المستقيمة log-log */
+  const curveClass = classifyResistivityCurve(getCombinedAbPoints());
+  let curveType = curveClass.label;
+
+  /* صور المقطع الجيوكهربائي والمنحني */
+  const vgeoImg = captureCanvasImage('vgeoCanvas');
+  const curveImg = captureCanvasImage('rhoChart');
+
+  const drillRows = drillTargets.map(t=>`
+    <div class="rpt-row">
+      <span class="rl">الحامل ${t.ordinal} — عمق ${t.depth.toFixed(1)} م (AB=${t.ab}م، ρ=${t.rho.toFixed(1)} Ω·m)</span>
+      <span class="rv" style="color:var(--green);">حفر عند ${t.drillDepth} م</span>
+    </div>`).join('');
+
+  body.innerHTML = `
+  <!-- رأس التقرير -->
+  <div class="rpt-card">
+    <div class="rpt-card-hd">🗂 معلومات المشروع</div>
+    <div class="rpt-card-bd">
+      <div class="rpt-row"><span class="rl">اسم المشروع</span><span class="rv">${proj}</span></div>
+      <div class="rpt-row"><span class="rl">الاتجاه</span><span class="rv">${dir}</span></div>
+      <div class="rpt-row"><span class="rl">الإحداثيات</span><span class="rv" style="font-size:.65rem;">${coords}</span></div>
+      <div class="rpt-row"><span class="rl">الجيوفيزيائي</span><span class="rv">وسام حميد الشيخ</span></div>
+      <div class="rpt-row"><span class="rl">الجهة</span><span class="rv" style="font-size:.65rem;">المؤسسة العامة للجيولوجيا والثروة المعدنية</span></div>
+      <div class="rpt-row"><span class="rl">تاريخ الرفع</span><span class="rv">${now}</span></div>
+      <div class="rpt-row"><span class="rl">الجهاز</span><span class="rv">SAS 300 · ABEM · تشكيل شلمبرجير</span></div>
+    </div>
+  </div>
+
+  <!-- ملخص القياسات -->
+  <div class="rpt-card">
+    <div class="rpt-card-hd">📊 ملخص القياسات</div>
+    <div class="rpt-card-bd">
+      <div class="rpt-summary-grid">
+        <div class="rpt-sbox"><div class="rsbl">عدد القياسات</div><div class="rsbv">${mCnt}</div></div>
+        <div class="rpt-sbox"><div class="rsbl">أقصى عمق (م)</div><div class="rsbv">${maxDepth}</div></div>
+        <div class="rpt-sbox"><div class="rsbl">أدنى ρ (Ω·m)</div><div class="rsbv" style="color:#0277bd;">${minRho}</div></div>
+        <div class="rpt-sbox"><div class="rsbl">أعلى ρ (Ω·m)</div><div class="rsbv" style="color:#e03131;">${maxRho}</div></div>
+        <div class="rpt-sbox"><div class="rsbl">متوسط ρ (Ω·m)</div><div class="rsbv" style="color:#7b40c2;">${avgRho}</div></div>
+        <div class="rpt-sbox"><div class="rsbl">طبقات مائية محتملة</div><div class="rsbv" style="color:#00838f;">${waterLs.length}</div></div>
+      </div>
+      <div class="rpt-row"><span class="rl">نوع المنحنى الكهربائي</span><span class="rv" style="font-size:.67rem;">${curveType}</span></div>
+    </div>
+  </div>
+
+  <!-- تحليل الطبقات -->
+  ${mCnt > 0 ? `
+  <div class="rpt-card">
+    <div class="rpt-card-hd">🪨 تحليل الطبقات الجيوكهربائية</div>
+    <div class="rpt-card-bd">
+      ${layerRows}
+      ${sorted.length > 8 ? `<div style="font-size:.6rem;color:var(--tx3);text-align:center;padding:6px 0;">... و${sorted.length-8} طبقات إضافية في ملف Excel الكامل</div>`:''}
+    </div>
+  </div>` : ''}
+
+  <!-- توصية الحفر المرتبة حسب أولوية الحوامل المائية -->
+  <div class="rpt-card">
+    <div class="rpt-card-hd">💧 توصية الحفر — الحوامل المائية مرتّبة حسب انخفاض المقاومية</div>
+    <div class="rpt-card-bd">
+      ${drillTargets.length ? `
+      ${drillRows}
+      <div class="rpt-row"><span class="rl">عدد الحوامل المائية المرشّحة</span><span class="rv">${drillTargets.length}</span></div>
+      <div style="margin-top:9px;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:1px solid #a5d6a7;border-radius:var(--r2);padding:10px 12px;font-size:.68rem;color:#1b5e20;line-height:1.7;">
+        ✅ يُوصى بالحفر أولاً على عمق الحامل ${drillTargets[0].ordinal} (${drillTargets[0].drillDepth} م)، ثم بالتتابع حسب الترتيب أعلاه عند الحاجة.<br>
+        ⚠️ هذا التقدير للاسترشاد فقط ويجب مقارنته مع بيانات آبار مجاورة والعمود الليتولوجي.
+      </div>` : `
+      <div style="background:var(--n7);border-radius:var(--r2);padding:10px 12px;font-size:.68rem;color:var(--tx3);">
+        ${mCnt < 3 ? '⚠️ أدخل 3 قياسات على الأقل لتفعيل توصية الحفر.' : '🔴 لم تُرصد طبقة مائية واضحة — يُوصى باستكمال قياسات أعماق أكبر أو تغيير الموقع.'}
+      </div>`}
+    </div>
+  </div>
+
+  <!-- المقطع الجيوكهربائي والمنحني -->
+  ${(vgeoImg || curveImg) ? `
+  <div class="rpt-card">
+    <div class="rpt-card-hd">📐 المقطع الجيوكهربائي والمنحني</div>
+    <div class="rpt-card-bd">
+      ${vgeoImg ? `<div style="margin-bottom:10px;"><div style="font-size:.65rem;font-weight:800;color:var(--tx2);margin-bottom:5px;">المقطع الجيوكهربائي الرأسي</div><img src="${vgeoImg}" style="width:100%;border-radius:8px;border:1px solid var(--bdr);"/></div>` : ''}
+      ${curveImg ? `<div><div style="font-size:.65rem;font-weight:800;color:var(--tx2);margin-bottom:5px;">منحني المقاومية الظاهرية</div><img src="${curveImg}" style="width:100%;border-radius:8px;border:1px solid var(--bdr);"/></div>` : ''}
+    </div>
+  </div>` : ''}
+
+  <!-- ملاحظات الجيوفيزيائي -->
+  <div class="rpt-card">
+    <div class="rpt-card-hd">📝 ملاحظات الجيوفيزيائي</div>
+    <div class="rpt-card-bd">
+      <div style="font-size:.72rem;color:var(--tx2);line-height:1.8;min-height:40px;">
+        ${notes || '<span style="color:var(--tx3);">لا توجد ملاحظات مدخلة</span>'}
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:.6rem;color:var(--tx3);text-align:center;padding:8px 0;">
+    © وسام حميد الشيخ — المؤسسة العامة للجيولوجيا والثروة المعدنية — SAS300 v2.9
+  </div>`;
+}
+
+function printReportNow(){
+  const rptContent = document.getElementById('rptBody').innerHTML;
+  const win = window.open('','_blank','width=800,height=900');
+  win.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>تقرير ميداني — SAS 300</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Tajawal',sans-serif;background:#fff;color:#081840;padding:20px;direction:rtl;}
+  @page{size:A4;margin:18mm 15mm 18mm 15mm;}
+  @media print{body{padding:0;}}
+
+  .print-header{text-align:center;border-bottom:3px solid #1148a8;padding-bottom:14px;margin-bottom:18px;}
+  .print-header h1{font-size:1.1rem;font-weight:900;color:#0b1f50;}
+  .print-header .sub{font-size:.72rem;color:#5a7ab0;margin-top:4px;}
+  .print-header .meta{font-size:.65rem;color:#888;margin-top:3px;}
+
+  .rpt-card{border:1.5px solid #c2d9f8;border-radius:12px;overflow:hidden;margin-bottom:12px;break-inside:avoid;}
+  .rpt-card-hd{background:linear-gradient(90deg,#0b1f50,#1148a8);color:#fff;padding:7px 13px;font-size:.72rem;font-weight:800;}
+  .rpt-card-bd{padding:10px 13px;}
+  .rpt-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #e8f2fd;font-size:.68rem;}
+  .rpt-row:last-child{border-bottom:none;}
+  .rl{color:#5a7ab0;font-weight:700;}
+  .rv{color:#081840;font-weight:900;}
+  .rpt-summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:9px;}
+  .rpt-sbox{border:1px solid #c2d9f8;border-radius:9px;padding:8px;text-align:center;background:#f3f8ff;}
+  .rsbl{font-size:.55rem;color:#5a7ab0;font-weight:700;margin-bottom:2px;}
+  .rsbv{font-size:.9rem;font-weight:900;color:#1148a8;}
+  .rpt-card img{max-width:100%;break-inside:avoid;}
+
+  .print-footer{text-align:center;font-size:.58rem;color:#aaa;margin-top:16px;padding-top:10px;border-top:1px solid #e8f2fd;}
+</style>
+</head>
+<body>
+<div class="print-header">
+  <h1>تقرير استكشاف المياه الجوفية بالمقاومية الكهربائية</h1>
+  <div class="sub">المؤسسة العامة للجيولوجيا والثروة المعدنية — دائرة الجيوفيزياء</div>
+  <div class="meta">SAS 300 · ABEM · تشكيل شلمبرجير · الجيوفيزيائي: وسام حميد الشيخ</div>
+</div>
+${rptContent}
+<div class="print-footer">© وسام حميد الشيخ — المؤسسة العامة للجيولوجيا والثروة المعدنية — SAS300 v2.8</div>
+</body>
+</html>`);
+  win.document.close();
+  setTimeout(()=>{ win.focus(); win.print(); }, 600);
+}
+
+/* ═══ EVENTS ═══ */
+rMeas.addEventListener('input', computeRho);
+rockSel.addEventListener('change',()=>{
+  const rhoText = trueRhoS.textContent;
+  const r = parseFloat(rhoText);
+  if(!isNaN(r)) interpret(r); else interpret(null);
+});
+projectNotes.addEventListener('input',saveLS);
+
+/* ═══ INIT ═══ */
+populateAB();
+initChart();
+initAbChart();
+buildRef();
+loadLS();
+displayCurrentPair();
+
+updateAbChart();
+updateAquiferBreaks();
+updateVerticalGeoSection();
+
+/* إعادة رسم المقطع الرأسي عند تغيّر حجم الشاشة (لأن Canvas بحاجة إعادة حساب العرض) */
+window.addEventListener('resize', ()=>{ if(currentSheet==='chart') updateVerticalGeoSection(); });
+</script>
+</body>
+</html>
